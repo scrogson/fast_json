@@ -1,0 +1,93 @@
+extern crate json;
+
+use rustler::{NifEncoder, NifEnv, NifError, NifTerm, NifResult};
+use rustler::binary::NifBinary;
+use rustler::tuple::*;
+use rustler::atom::*;
+use rustler::map::*;
+use json::Error as JsonError;
+use json::JsonValue;
+use json::JsonValue::*;
+
+rustler_export_nifs!(
+    "Elixir.Json",
+    [("native_parse", 2, parse),
+     ("stringify", 2, stringify)],
+    Some(on_load)
+);
+
+macro_rules! handle_parse_error {
+    ($env:expr, $err:expr) => {
+        return Ok(error_to_term($env, $err))
+    };
+}
+
+fn error_to_term<'a>(env: &'a NifEnv, err: &JsonError) -> NifTerm<'a> {
+    let error = format!("{}", err).encode(env);
+    make_tuple(env, &[get_atom("error").unwrap().to_term(env), error])
+}
+
+fn on_load(_env: &NifEnv, _info: NifTerm) -> bool {
+    init_atom("ok");
+    init_atom("error");
+
+    true
+}
+
+fn parse<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
+    let binary = try!(NifBinary::from_term(args[0]));
+
+    let data = match std::str::from_utf8(binary.as_slice()) {
+        Ok(string) => string,
+        Err(_) => return Err(NifError::Atom("utf8_conversion_failed")),
+    };
+
+    let json_data = match json::parse(data) {
+        Ok(val) => val,
+        Err(err) => handle_parse_error!(env, &err),
+    };
+
+    let ok = get_atom("ok").unwrap().to_term(env);
+    let result = json_to_term(env, json_data);
+
+    Ok(make_tuple(env, &[ok, result]))
+}
+
+// Currently just returns an `ok` atom.
+fn stringify<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
+    Ok(term_to_json(env, try!(args[0].decode())))
+}
+
+fn json_to_term<'a>(env: &'a NifEnv, value: JsonValue) -> NifTerm<'a> {
+    match value {
+        Null => rustler::atom::init_atom("nil").to_term(env),
+        Short(s) => s.encode(env),
+        String(s) => s.encode(env),
+        Number(n) => {
+            let (_, _, exponent) = n.as_parts();
+            if exponent != 0 {
+                f64::from(n).encode(env)
+            } else {
+                i64::from(n).encode(env)
+            }
+        }
+        Boolean(b) => b.encode(env),
+        Object(mut obj) => {
+            obj.iter_mut().fold(map_new(env), |map, (key, value)| {
+                let key_term = key.encode(env);
+                let value_term = json_to_term(env, value.take());
+                map_put(map, key_term, value_term).unwrap()
+            })
+        }
+        Array(values) => {
+            let terms: Vec<NifTerm<'a>> = values.into_iter()
+                .map(|v| json_to_term(env, v))
+                .collect();
+            terms.encode(env)
+        }
+    }
+}
+
+fn term_to_json<'a>(env: &'a NifEnv, _value: NifTerm) -> NifTerm<'a> {
+    get_atom("ok").unwrap().to_term(env)
+}

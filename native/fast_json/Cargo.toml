@@ -1,0 +1,23 @@
+[package]
+name = "fast_json"
+version = "0.1.0"
+authors = []
+build = "build.rs"
+
+[lib]
+name = "fast_json"
+path = "src/lib.rs"
+crate-type = ["dylib"]
+
+[features]
+default = ["with-syntex"]
+
+with-syntex = ["rustler_codegen/with-syntex"]
+
+[build-dependencies]
+rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
+
+[dependencies]
+rustler = { path = "/Users/scrogson/Forks/Rustler" }
+rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
+json = "0.11.0"
