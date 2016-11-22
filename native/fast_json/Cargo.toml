@@ -15,9 +15,9 @@ default = ["with-syntex"]
 with-syntex = ["rustler_codegen/with-syntex"]
 
 [build-dependencies]
-rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
+rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
 
 [dependencies]
-rustler = { path = "/Users/scrogson/Forks/Rustler" }
-rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
+rustler = { git = "https://github.com/hansihe/Rustler" }
+rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
 json = "0.11.0"
