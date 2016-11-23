@@ -32,7 +32,6 @@ defmodule Json.Mixfile do
 
   defp rustler_crates do
     [fast_json: [
-      cargo: {:rustup, "stable-x86_64-apple-darwin"},
       path: "/native/fast_json",
       mode: rustc_mode(Mix.env)]]
   end
