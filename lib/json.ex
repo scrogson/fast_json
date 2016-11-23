@@ -15,6 +15,7 @@ defmodule Json do
     {:ok, %{"lists" => [1,2,3]}}
 
   """
+  def parse(data, opts \\ []), do: native_parse(data, opts)
   def parse!(data, opts \\ []) do
     case native_parse(data, opts) do
       {:ok, result} -> result
