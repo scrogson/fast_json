@@ -1,7 +1,6 @@
 extern crate json;
 
-use rustler::{NifDecoder, NifEncoder, NifEnv, NifError, NifTerm, NifResult};
-use rustler::binary::NifBinary;
+use rustler::{NifDecoder, NifEncoder, NifEnv, NifTerm, NifResult};
 use rustler::tuple::*;
 use rustler::atom::*;
 use rustler::map::*;
@@ -102,13 +101,13 @@ fn term_to_json<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<JsonValue> {
     }
 }
 
-fn handle_map(env: &NifEnv, iter: NifMapIterator) -> NifResult<JsonValue> {
-    let values: NifResult<Vec<JsonValue>> = iter.map(|term| {
-        term_to_json(env, term)
-    }).collect();
+//fn handle_map(env: &NifEnv, iter: NifMapIterator) -> NifResult<JsonValue> {
+    //let values: NifResult<Vec<JsonValue>> = iter.map(|term| {
+        //term_to_json(env, term)
+    //}).collect();
 
-    Ok(JsonValue::Array(try!(values)))
-}
+    //Ok(JsonValue::Array(try!(values)))
+//}
 
 fn handle_list(env: &NifEnv, iter: NifListIterator) -> NifResult<JsonValue> {
     let values: NifResult<Vec<JsonValue>> = iter.map(|term| {
