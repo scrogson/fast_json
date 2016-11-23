@@ -60,7 +60,7 @@ fn stringify<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>>
 
 fn json_to_term<'a>(env: &'a NifEnv, value: JsonValue) -> NifTerm<'a> {
     match value {
-        Null => rustler::atom::init_atom("nil").to_term(env),
+        Null => get_atom("nil").unwrap().to_term(env),
         Short(s) => s.encode(env),
         String(s) => s.encode(env),
         Number(n) => {
