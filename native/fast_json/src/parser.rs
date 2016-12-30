@@ -1,21 +1,21 @@
-use rustler::{NifTerm, NifEnv, NifEncoder, NifResult};
+use rustler::{NifTerm, NifEnv, NifEncoder};
 use rustler::map::{map_new, map_put};
 use rustler::atom::init_atom;
 
-//use error_chain;
+use error_chain;
 
-//pub mod errors {
-    //error_chain! {
-        //errors {
-            //InvalidJson(message: &'static str, offset: usize) {
-                //description(message)
-                //display("{} (at offset {})", message, offset)
-            //}
-        //}
-    //}
-//}
+pub mod errors {
+    error_chain! {
+        errors {
+            InvalidJson(message: &'static str, offset: usize) {
+                description(message)
+                display("{} (at offset {})", message, offset)
+            }
+        }
+    }
+}
 
-//use errors::*;
+use self::errors::*;
 
 /// Answers the question "when I'm done parsing this value, where does it go?"
 enum Target<'a> {
@@ -68,7 +68,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_string(&mut self) -> NifResult<NifTerm<'a>> {
+    fn parse_string(&mut self) -> Result<NifTerm<'a>> {
         assert_eq!(self.peek_next_byte(), b'"');
         let start = self.i;
         self.i += 1;
@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
         ErrorKind::InvalidJson(message, self.i).into()
     }
 
-    fn parse_key(&mut self) -> NifResult<NifTerm<'a>> {
+    fn parse_key(&mut self) -> Result<NifTerm<'a>> {
         self.skip_ws();
         if self.at_end() || self.peek_next_byte() != b'"' {
             return Err(self.fail("expected key in object"));
@@ -148,7 +148,7 @@ impl<'a> Parser<'a> {
         self.s.as_bytes()[self.i]
     }
 
-    fn parse_one_value(&mut self) -> NifResult<NifTerm<'a>> {
+    fn parse_one_value(&mut self) -> Result<NifTerm<'a>> {
         loop {
             self.skip_ws();
             if self.at_end() {
@@ -242,11 +242,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn store_value(&mut self, v: NifTerm<'a>) -> NifResult<()> {
-        match self.stack.last_mut() {
-            Some(&mut Target::IntoObject { ref mut map, ref mut key }) => {
-                let new_map = map_put(*map, key.unwrap(), v).unwrap();
-                *map = new_map;
+    fn store_value(&mut self, v: NifTerm<'a>) -> Result<()> {
+        match self.stack.pop() {
+            Some(Target::IntoObject { map, key }) => {
+                let new_map = map_put(map, key.unwrap(), v).unwrap();
                 self.skip_ws();
                 if self.at_end() {
                     return Err(self.fail("unmatched '{'"));
@@ -254,17 +253,24 @@ impl<'a> Parser<'a> {
                 match self.peek_next_byte() {
                     b',' => {
                         self.i += 1;
-                        *key = Some(self.parse_key()?);
+                        let new_key = self.parse_key()?;
+                        self.stack.push(Target::IntoObject {
+                            map: new_map,
+                            key: Some(new_key)
+                        });
                     }
                     b'}' => {
-                        *key = None;
+                        self.stack.push(Target::IntoObject {
+                            map: new_map,
+                            key: None
+                        });
                     }
                     _ => {
                         return Err(self.fail("expected ',' or '}' after key-value pair in object"));
                     }
                 }
             }
-            Some(&mut Target::IntoArray { ref mut elements }) => {
+            Some(Target::IntoArray { mut elements }) => {
                 elements.push(v);
                 self.skip_ws();
                 if self.at_end() {
@@ -275,6 +281,7 @@ impl<'a> Parser<'a> {
                     b']' => {}
                     _ => return Err(self.fail("expected ',' or ']' after array element"))
                 }
+                self.stack.push(Target::IntoArray { elements: elements });
             }
             None => panic!("can't happen")
         }
@@ -304,7 +311,7 @@ impl<'a> Parser<'a> {
 }
 
 
-pub fn parse<'a>(env: &'a NifEnv, s: String) -> NifResult<NifTerm<'a>> {
+pub fn parse<'a>(env: &'a NifEnv, s: String) -> Result<NifTerm<'a>> {
     let mut p = Parser::new(env, s);
     loop {
         match p.parse_some(1)? {
