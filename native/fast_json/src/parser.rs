@@ -2,8 +2,6 @@ use rustler::{NifTerm, NifEnv, NifEncoder};
 use rustler::map::{map_new, map_put};
 use rustler::atom::init_atom;
 
-use error_chain;
-
 pub mod errors {
     error_chain! {
         errors {
