@@ -11,13 +11,11 @@ use rustler::atom::init_atom;
 mod encoder;
 mod decoder;
 mod parser;
-mod new_decoder;
 
 rustler_export_nifs! {
     "Elixir.Json",
     [("native_parse", 2, decoder::decode),
-     ("stringify", 2, encoder::encode),
-     ("parse", 2, new_decoder::new_decode)],
+     ("stringify", 2, encoder::encode)],
     Some(load)
 }
 

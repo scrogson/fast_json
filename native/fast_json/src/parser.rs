@@ -5,9 +5,9 @@ use rustler::atom::init_atom;
 pub mod errors {
     error_chain! {
         errors {
-            InvalidJson(message: &'static str, offset: usize) {
+            InvalidJson(message: String, offset: usize) {
                 description(message)
-                display("{} (at offset {})", message, offset)
+                display("{} at position {}", message, offset)
             }
         }
     }
@@ -105,7 +105,7 @@ impl<'a> Parser<'a> {
 //                             self.fail("invalid \\u escape")
 //                     self.i += 4
 //                     strval += chr(int(hexcode, 16))
-                            _ => return Err(self.fail("invalid character escape"))
+                            token => return Err(self.fail_string(format!("Unexpected token {} in JSON", token)))
                         };
                         self.i += 1;
                         strval.push(out_char);
@@ -117,22 +117,26 @@ impl<'a> Parser<'a> {
                 // do nothing, we'll copy it into strval later
             }
         }
-        Err(self.fail("unterminated string literal"))
+        Err(self.fail("Invalid or unexpected token"))
     }
 
     fn fail(&self, message: &'static str) -> Error {
-        ErrorKind::InvalidJson(message, self.i).into()
+        self.fail_string(message.to_string())
+    }
+
+    fn fail_string(&self, message: String) -> Error {
+        ErrorKind::InvalidJson(message.to_string(), self.i).into()
     }
 
     fn parse_key(&mut self) -> Result<NifTerm<'a>> {
         self.skip_ws();
         if self.at_end() || self.peek_next_byte() != b'"' {
-            return Err(self.fail("expected key in object"));
+            return Err(self.fail("Unexpected end of JSON input"));
         }
         let key = self.parse_string()?;
         self.skip_ws();
         if self.at_end() || self.peek_next_byte() != b':' {
-            return Err(self.fail("expected ':' after key in object"));
+            return Err(self.fail_string(format!("Unexpected token {} in JSON", self.peek_next_byte() as char)));
         }
         self.i += 1;
         Ok(key)
@@ -151,9 +155,7 @@ impl<'a> Parser<'a> {
             self.skip_ws();
             if self.at_end() {
                 let msg = match self.stack.last() {
-                    Some(&Target::IntoArray { .. }) => "unexpected end of input in array",
-                    Some(&Target::IntoObject { .. }) => "unexpected end of input in object",
-                    None => "input was all whitespace"
+                    _ => "Unexpected end of JSON input"
                 };
                 return Err(self.fail(msg));
             }
@@ -166,10 +168,10 @@ impl<'a> Parser<'a> {
                     }
                     let numstr = &self.s[start .. self.i];
                     if numstr.contains('.') || numstr.contains('e') || numstr.contains("E") {
-                        let number: f64 = numstr.parse().chain_err(|| "invalid number")?;
+                        let number: f64 = numstr.parse().chain_err(|| self.fail("Unexpected number in JSON"))?;
                         number.encode(self.env)
                     } else {
-                        let number: i64 = numstr.parse().chain_err(|| "invalid number")?;
+                        let number: i64 = numstr.parse().chain_err(|| self.fail("Unexpected number in JSON"))?;
                         number.encode(self.env)
                     }
                 }
@@ -234,7 +236,7 @@ impl<'a> Parser<'a> {
                     }
                 }
 
-                _ => return Err(self.fail("unexpected character"))
+                token => return Err(self.fail_string(format!("Unexpected token {}", token as char)))
             };
             return Ok(value);
         }
