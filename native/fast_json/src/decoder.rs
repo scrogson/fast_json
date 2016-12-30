@@ -61,4 +61,3 @@ fn json_to_term<'a>(env: &'a NifEnv, value: JsonValue) -> NifTerm<'a> {
         }
     }
 }
-
