@@ -70,8 +70,8 @@ impl<'a> Parser<'a> {
 
     fn parse_string(&mut self) -> Result<NifTerm<'a>> {
         assert_eq!(self.peek_next_byte(), b'"');
-        let start = self.i;
         self.i += 1;
+        let start = self.i;
         let mut strval = String::new();
 
         let mut iter = self.s[start..].char_indices();
