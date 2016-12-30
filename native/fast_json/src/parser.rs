@@ -2,8 +2,6 @@ use rustler::{NifTerm, NifEnv, NifEncoder};
 use rustler::map::{map_new, map_put};
 use rustler::atom::init_atom;
 
-use error_chain;
-
 pub mod errors {
     error_chain! {
         errors {
@@ -70,8 +68,8 @@ impl<'a> Parser<'a> {
 
     fn parse_string(&mut self) -> Result<NifTerm<'a>> {
         assert_eq!(self.peek_next_byte(), b'"');
-        let start = self.i;
         self.i += 1;
+        let start = self.i;
         let mut strval = String::new();
 
         let mut iter = self.s[start..].char_indices();

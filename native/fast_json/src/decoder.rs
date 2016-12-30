@@ -1,7 +1,7 @@
 use rustler::{NifDecoder, NifEncoder, NifEnv, NifTerm, NifResult};
-use rustler::tuple::*;
-use rustler::atom::*;
-use rustler::map::*;
+use rustler::tuple::make_tuple;
+use rustler::atom::get_atom;
+use rustler::map::{map_new, map_put};
 use json;
 use json::Error as JsonError;
 use json::JsonValue;

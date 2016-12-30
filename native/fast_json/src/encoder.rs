@@ -1,10 +1,7 @@
 use rustler::{NifDecoder, NifEncoder, NifEnv, NifTerm, NifResult};
-use rustler::tuple::*;
-use rustler::atom::*;
-use rustler::map::*;
+use rustler::atom::{NifAtom, get_atom};
 use rustler::list::NifListIterator;
 use json;
-use json::Error as JsonError;
 use json::JsonValue;
 
 pub fn encode<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
