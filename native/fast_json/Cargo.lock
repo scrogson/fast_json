@@ -115,7 +115,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "rustler"
 version = "0.12.0"
-source = "git+https://github.com/hansihe/Rustler#a0f1783108f89c11766b77f356abe14f381ec2b9"
+source = "git+https://github.com/hansihe/Rustler#c89694215d2562ada259458d96d14f288337809b"
 dependencies = [
  "erlang_nif-sys 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -124,7 +124,7 @@ dependencies = [
 [[package]]
 name = "rustler_codegen"
 version = "0.12.0"
-source = "git+https://github.com/hansihe/Rustler#a0f1783108f89c11766b77f356abe14f381ec2b9"
+source = "git+https://github.com/hansihe/Rustler#c89694215d2562ada259458d96d14f288337809b"
 dependencies = [
  "quote 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
