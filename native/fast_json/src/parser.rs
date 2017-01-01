@@ -1,5 +1,5 @@
 use rustler::{NifTerm, NifEnv, NifEncoder};
-use rustler::map::{map_new, map_put};
+use rustler::map::map_new;
 use rustler::atom::init_atom;
 
 pub mod errors {
@@ -245,28 +245,29 @@ impl<'a> Parser<'a> {
     fn store_value(&mut self, v: NifTerm<'a>) -> Result<()> {
         match self.stack.pop() {
             Some(Target::IntoObject { map, key }) => {
-                let new_map = map_put(map, key.unwrap(), v).unwrap();
-                self.skip_ws();
-                if self.at_end() {
-                    return Err(self.fail("unmatched '{'"));
-                }
-                match self.peek_next_byte() {
-                    b',' => {
-                        self.i += 1;
-                        let new_key = self.parse_key()?;
-                        self.stack.push(Target::IntoObject {
-                            map: new_map,
-                            key: Some(new_key)
-                        });
+                if let Ok(new_map) = map.map_put(key.unwrap(), v) {
+                    self.skip_ws();
+                    if self.at_end() {
+                        return Err(self.fail("unmatched '{'"));
                     }
-                    b'}' => {
-                        self.stack.push(Target::IntoObject {
-                            map: new_map,
-                            key: None
-                        });
-                    }
-                    _ => {
-                        return Err(self.fail("expected ',' or '}' after key-value pair in object"));
+                    match self.peek_next_byte() {
+                        b',' => {
+                            self.i += 1;
+                            let new_key = self.parse_key()?;
+                            self.stack.push(Target::IntoObject {
+                                map: new_map,
+                                key: Some(new_key)
+                            });
+                        }
+                        b'}' => {
+                            self.stack.push(Target::IntoObject {
+                                map: new_map,
+                                key: None
+                            });
+                        }
+                        _ => {
+                            return Err(self.fail("expected ',' or '}' after key-value pair in object"));
+                        }
                     }
                 }
             }

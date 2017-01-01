@@ -16,7 +16,7 @@ fn term_to_json<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<JsonValue> {
         handle_binary(env, string)
     } else if let Ok(iter) = <NifListIterator as NifDecoder>::decode(term) {
         handle_list(env, iter)
-    } else if let Some(atom) = NifAtom::from_term(env, term) {
+    } else if let Ok(atom) = NifAtom::from_term(term) {
         handle_atom(env, atom)
     } else if let Ok(number) = <f64 as NifDecoder>::decode(term) {
         handle_float(env, number)
