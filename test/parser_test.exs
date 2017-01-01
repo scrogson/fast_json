@@ -4,6 +4,29 @@ defmodule Json.ParserTest do
   import Json
   alias Json.Error
 
+  test "reductions" do
+    data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
+    count_reductions(data, &parse!/1)
+  end
+
+  defp count_reductions(data, fun) do
+    parent = self()
+    pid = spawn(fn ->
+      me = self()
+      start = :os.timestamp()
+      r0 = Process.info(me, :reductions)
+      decoded = fun.(data)
+      t = :timer.now_diff(:os.timestamp(), start)
+      r1 = Process.info(me, :reductions)
+      send(parent, {me, {t, r0, r1}})
+    end)
+
+    receive do
+      {^pid, result} ->
+        IO.inspect result
+    end
+  end
+
   test "numbers" do
     assert_raise Error, "Unexpected number in JSON at position 1", fn -> parse!("-") end
     assert_raise Error, "Unexpected number in JSON at position 3", fn -> parse!("--1") end
