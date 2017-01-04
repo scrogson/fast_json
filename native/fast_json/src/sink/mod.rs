@@ -18,6 +18,10 @@ impl<'a> TermSink<'a> {
         }
     }
 
+    pub fn to_stack(self) -> Vec<NifTerm<'a>> {
+        self.stack
+    }
+
     pub fn push(&mut self, value: NifTerm<'a>) {
         self.stack.push(value);
     }

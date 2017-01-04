@@ -1,4 +1,3 @@
-use std::sync::Mutex;
 use ::sink::{TermSink, ValueSink};
 use ::errors::*;
 
@@ -12,8 +11,6 @@ enum Stack {
         key: Option<String>,
     }
 }
-
-pub struct ParserResource(Mutex<Parser>);
 
 pub struct Parser {
     /// Source string that we're parsing.

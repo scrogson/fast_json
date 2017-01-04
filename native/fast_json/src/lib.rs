@@ -14,11 +14,12 @@ mod errors;
 mod parser;
 mod sink;
 
-use parser::ParserResource;
+use decoder::ParserResource;
 
 rustler_export_nifs! {
     "Elixir.Json",
     [("naive_parse", 2, decoder::naive_parse),
+     ("decode_init", 2, decoder::decode_init),
      ("stringify", 2, encoder::encode)],
     Some(load)
 }
@@ -26,6 +27,7 @@ rustler_export_nifs! {
 fn load(env: &NifEnv, _info: NifTerm) -> bool {
     init_atom("ok");
     init_atom("error");
+    init_atom("more");
 
     resource_struct_init!(ParserResource, env);
 
