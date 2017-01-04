@@ -1,10 +1,11 @@
 use std::sync::Mutex;
-
 use rustler::{NifTerm, NifEnv};
 use rustler::schedule::consume_timeslice;
-
 use ::sink::{TermSink, ValueSink};
 use ::errors::*;
+
+const BACKSPACE: char = 8 as char;
+const FORM_FEED: char = 12 as char;
 
 #[derive(Debug)]
 enum Stack {
@@ -16,7 +17,7 @@ enum Stack {
 
 pub struct ParserResource(Mutex<Parser>);
 
-struct Parser {
+pub struct Parser {
     /// Source string that we're parsing.
     s: String,
 
@@ -34,11 +35,8 @@ fn is_whitespace(value: u8) -> bool {
    }
 }
 
-const BACKSPACE: char = 8 as char;
-const FORM_FEED: char = 12 as char;
-
 impl Parser {
-    fn new(s: String) -> Parser {
+    pub fn new(s: String) -> Parser {
         Parser {
             s: s,
             i: 0,
@@ -46,11 +44,11 @@ impl Parser {
         }
     }
 
-    pub fn push(&mut self, value: Stack) {
+    fn push(&mut self, value: Stack) {
         self.stack.push(value);
     }
 
-    pub fn pop(&mut self) -> Option<Stack> {
+    fn pop(&mut self) -> Option<Stack> {
         self.stack.pop()
     }
 
@@ -296,23 +294,15 @@ impl Parser {
     }
 }
 
-// chucking...
-// consume_timeslice...
-// pub fn chuck_parse(...)
-// chuck_parse(binary)
-// initialize the resource
-//
-// chuck_parse_iter
-// decode the resource and make a parser from it
-// decode sink stack and make a new TermSink::new(env, stack)
-pub fn naive_parse<'a>(env: &'a NifEnv, source: String) -> Result<NifTerm<'a>> {
+pub fn naive<'a>(env: &'a NifEnv, source: String) -> Result<NifTerm<'a>> {
     let mut sink = TermSink::new(env, vec![]);
     let mut parser = Parser::new(source);
 
     loop {
-        if consume_timeslice(env, 1) {
+        //if consume_timeslice(env, 1) {
             //{:iter, resource, sink.stack.encode(sink.env)}
-        }
+        //}
+
         if parser.parse(&mut sink)? {
             return Ok(sink.pop());
         }
