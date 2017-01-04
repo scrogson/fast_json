@@ -5,6 +5,11 @@ defmodule Json.ParserTest do
   alias Json.Error
 
   test "reductions" do
+    :erlang.system_monitor(self(), [{:long_schedule, 2}])
+    on_exit fn ->
+      IO.inspect Process.info(self(), :messages)
+    end
+
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
     count_reductions(data, &parse!/1)
   end
@@ -15,7 +20,7 @@ defmodule Json.ParserTest do
       me = self()
       start = :os.timestamp()
       r0 = Process.info(me, :reductions)
-      decoded = fun.(data)
+      _decoded = fun.(data)
       t = :timer.now_diff(:os.timestamp(), start)
       r1 = Process.info(me, :reductions)
       send(parent, {me, {t, r0, r1}})

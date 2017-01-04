@@ -1,10 +1,8 @@
-use error_chain;
-
 error_chain! {
     errors {
-        InvalidJson(message: &'static str, offset: usize) {
+        InvalidJson(message: String, offset: usize) {
             description(message)
-            display("{} (at offset {})", message, offset)
+            display("{} at position {}", message, offset)
         }
     }
 }

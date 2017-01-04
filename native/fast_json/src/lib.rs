@@ -1,17 +1,33 @@
-// When writing your NIF you should edit `lib.rs.in`. This is done
-// to support both compilation with and without syntex.
+#![allow(dead_code)]
+#[macro_use]
+extern crate rustler;
+#[macro_use]
+extern crate error_chain;
+extern crate json;
 
-// Enable the rustler_codegen compiler plugin if we are not using
-// syntex.
-#![cfg_attr(not(feature = "with-syntex"), feature(plugin))]
-#![cfg_attr(not(feature = "with-syntex"), plugin(rustler_codegen))]
+use rustler::{NifEnv, NifTerm};
+use rustler::atom::init_atom;
 
-// If we are using syntex, include the expanded file. This is what
-// causes bad error messages.
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/lib.rs"));
+mod decoder;
+mod encoder;
+mod errors;
+mod parser;
+mod sink;
 
-// If we are on nightly, we include the file directly.
-// The rust compiler will then report errors in that file.
-#[cfg(not(feature = "with-syntex"))]
-include!("lib.in.rs");
+use parser::ParserResource;
+
+rustler_export_nifs! {
+    "Elixir.Json",
+    [("naive_parse", 2, decoder::naive_parse),
+     ("stringify", 2, encoder::encode)],
+    Some(load)
+}
+
+fn load(env: &NifEnv, _info: NifTerm) -> bool {
+    init_atom("ok");
+    init_atom("error");
+
+    resource_struct_init!(ParserResource, env);
+
+    true
+}

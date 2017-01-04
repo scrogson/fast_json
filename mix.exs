@@ -26,12 +26,13 @@ defmodule Json.Mixfile do
 
      # Benchmarking
      {:benchfella, "~> 0.3", only: :bench},
-     {:jiffy, "~> 0.14", only: :bench},
+     {:jiffy, "~> 0.14", only: [:bench, :test]},
      {:poison, "~> 3.0", only: :bench}]
   end
 
   defp rustler_crates do
     [fast_json: [
+      default_features: false,
       path: "/native/fast_json",
       mode: rustc_mode(Mix.env)]]
   end
