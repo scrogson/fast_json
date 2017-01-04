@@ -39,7 +39,7 @@ defmodule Json do
 
   defp naive_parse(_, _ \\ []), do: exit(:nif_not_loaded)
   defp decode_init(_, _ \\ []), do: exit(:nif_not_loaded)
-  defp decode_iter(_, _ \\ []), do: exit(:nif_not_loaded)
+  def decode_iter(_, _ \\ []), do: exit(:nif_not_loaded)
 
   @doc ~S"""
   Decodes a map or struct into a JSON string.

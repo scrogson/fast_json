@@ -20,6 +20,7 @@ rustler_export_nifs! {
     "Elixir.Json",
     [("naive_parse", 2, decoder::naive_parse),
      ("decode_init", 2, decoder::decode_init),
+     ("decode_iter", 2, decoder::decode_iter),
      ("stringify", 2, encoder::encode)],
     Some(load)
 }
