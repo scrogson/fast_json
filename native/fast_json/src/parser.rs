@@ -1,6 +1,4 @@
 use std::sync::Mutex;
-use rustler::{NifTerm, NifEnv};
-use rustler::schedule::consume_timeslice;
 use ::sink::{TermSink, ValueSink};
 use ::errors::*;
 
@@ -281,7 +279,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse(&mut self, sink: &mut TermSink) -> Result<bool> {
+    pub fn parse(&mut self, sink: &mut TermSink) -> Result<bool> {
         self.parse_one_value(sink)?;
 
         if self.stack.is_empty() {
@@ -290,21 +288,6 @@ impl Parser {
         } else {
             self.store_value(sink)?;
             Ok(false)
-        }
-    }
-}
-
-pub fn naive<'a>(env: &'a NifEnv, source: String) -> Result<NifTerm<'a>> {
-    let mut sink = TermSink::new(env, vec![]);
-    let mut parser = Parser::new(source);
-
-    loop {
-        //if consume_timeslice(env, 1) {
-            //{:iter, resource, sink.stack.encode(sink.env)}
-        //}
-
-        if parser.parse(&mut sink)? {
-            return Ok(sink.pop());
         }
     }
 }

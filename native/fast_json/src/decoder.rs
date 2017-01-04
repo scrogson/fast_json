@@ -2,7 +2,8 @@ use rustler::{NifEncoder, NifEnv, NifTerm, NifResult};
 use rustler::tuple::make_tuple;
 use rustler::atom::get_atom;
 use ::errors::*;
-use ::parser;
+use ::parser::{Parser};
+use ::sink::TermSink;
 
 // chucking...
 // consume_timeslice...
@@ -16,11 +17,27 @@ use ::parser;
 pub fn naive_parse<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
     let source = args[0].decode()?;
 
-    match parser::naive(env, source) {
+    match naive(env, source) {
         Ok(term) => ok(env, term),
         Err(err) => error(env, err)
     }
 }
+
+pub fn naive<'a>(env: &'a NifEnv, source: String) -> Result<NifTerm<'a>> {
+    let mut sink = TermSink::new(env, vec![]);
+    let mut parser = Parser::new(source);
+
+    loop {
+        //if consume_timeslice(env, 1) {
+            //{:iter, resource, sink.stack.encode(sink.env)}
+        //}
+
+        if parser.parse(&mut sink)? {
+            return Ok(sink.pop());
+        }
+    }
+}
+
 fn ok<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<NifTerm<'a>> {
     let ok = get_atom("ok").unwrap().to_term(env);
     Ok(make_tuple(env, &[ok, term]))
