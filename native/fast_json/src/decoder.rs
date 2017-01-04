@@ -4,9 +4,10 @@ use rustler::resource::ResourceCell;
 use rustler::schedule::consume_timeslice;
 use rustler::tuple::make_tuple;
 use rustler::atom::get_atom;
-use ::errors::*;
-use ::parser::{Parser};
-use ::sink::TermSink;
+use errors::*;
+use parser::{Parser};
+use sink::TermSink;
+use threaded_awesomeness;
 
 pub struct ParserResource(Mutex<Parser>);
 
@@ -60,12 +61,31 @@ pub fn decode_iter<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTer
     Ok(make_tuple(env, &[more, args[0], sink.to_stack().encode(env)]))
 }
 
-fn ok<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<NifTerm<'a>> {
+pub fn decode_threaded<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
+    let source = args[0].decode()?;
+    let mut parser = Parser::new(source);
+
+    threaded_awesomeness::spawn_thread_and_send_value_back_to_self(
+        env,
+        move |env| {
+            let mut sink = TermSink::new(env, vec![]);
+            loop {
+                match parser.parse(&mut sink) {
+                    Ok(true) => return ok(env, sink.pop()).ok().unwrap(),
+                    Ok(false) => continue,
+                    Err(err) => return error(env, err).ok().unwrap()
+                }
+            }
+        });
+    Ok(get_atom("ok").unwrap().to_term(env))
+}
+
+pub fn ok<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<NifTerm<'a>> {
     let ok = get_atom("ok").unwrap().to_term(env);
     Ok(make_tuple(env, &[ok, term]))
 }
 
-fn error<'a>(env: &'a NifEnv, err: Error) -> NifResult<NifTerm<'a>> {
+pub fn error<'a>(env: &'a NifEnv, err: Error) -> NifResult<NifTerm<'a>> {
     let error = get_atom("error").unwrap().to_term(env);
     let message = format!("{}", err).encode(env);
     Ok(make_tuple(env, &[error, message]))

@@ -18,6 +18,6 @@ rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
 
 [dependencies]
 error-chain = "0.7.2"
-rustler = { git = "https://github.com/hansihe/Rustler" }
-rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
+rustler = { path = "../../../Rustler" }
+erlang_nif-sys = ">=0.5"
 json = "0.11.0"

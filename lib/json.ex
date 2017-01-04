@@ -17,6 +17,13 @@ defmodule Json do
   """
   def parse_naive(data, opts \\ []), do: naive_parse(data, opts)
 
+  def parse(data, opts \\ []) do
+    decode_threaded(data, opts)
+    receive do
+      term -> term
+    end
+  end
+
   def parse!(data, opts \\ []) do
     case parse(data, opts) do
       {:ok, result} -> result
@@ -24,7 +31,14 @@ defmodule Json do
     end
   end
 
-  def parse(data, opts \\ []) do
+  def parse_iter!(data, opts \\ []) do
+    case parse_iter(data, opts) do
+      {:ok, result} -> result
+      {:error, error} -> raise Error, message: error
+    end
+  end
+
+  def parse_iter(data, opts \\ []) do
     handle_parse_result(decode_init(data, opts))
   end
 
@@ -42,6 +56,7 @@ defmodule Json do
   defp naive_parse(_, _ \\ []), do: exit(:nif_not_loaded)
   defp decode_init(_, _ \\ []), do: exit(:nif_not_loaded)
   def decode_iter(_, _ \\ []), do: exit(:nif_not_loaded)
+  defp decode_threaded(_, _ \\ []), do: exit(:nif_not_loaded)
 
   @doc ~S"""
   Decodes a map or struct into a JSON string.
