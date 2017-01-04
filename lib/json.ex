@@ -16,6 +16,7 @@ defmodule Json do
 
   """
   def parse_naive(data, opts \\ []), do: naive_parse(data, opts)
+
   def parse!(data, opts \\ []) do
     case parse(data, opts) do
       {:ok, result} -> result
@@ -24,14 +25,15 @@ defmodule Json do
   end
 
   def parse(data, opts \\ []) do
-    case decode_init(data, opts) do
+    handle_parse_result(decode_init(data, opts))
+  end
+
+  def handle_parse_result(result) do
+    case result do
       {:ok, result} ->
         {:ok, result}
       {:more, resource, acc} ->
-        IO.inspect resource
-        #IO.inspect acc
-        #more_chuck(resource, acc)
-        {:ok, acc}
+        handle_parse_result(decode_iter(resource, acc))
       {:error, error} ->
         {:error, error}
     end

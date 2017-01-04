@@ -32,6 +32,12 @@ defmodule Json.ParserTest do
     end
   end
 
+  test "large input" do
+    data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
+    {:ok, expected} = parse_naive(data)
+    assert expected == parse!(data)
+  end
+
   test "numbers" do
     assert_raise Error, "Unexpected number in JSON at position 1", fn -> parse!("-") end
     assert_raise Error, "Unexpected number in JSON at position 3", fn -> parse!("--1") end
