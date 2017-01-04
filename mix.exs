@@ -32,7 +32,6 @@ defmodule Json.Mixfile do
 
   defp rustler_crates do
     [fast_json: [
-      default_features: false,
       path: "/native/fast_json",
       mode: rustc_mode(Mix.env)]]
   end

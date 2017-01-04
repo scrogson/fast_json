@@ -10,8 +10,7 @@ path = "src/lib.rs"
 crate-type = ["dylib"]
 
 [features]
-default = ["with-syntex"]
-
+default = []
 with-syntex = ["rustler_codegen/with-syntex"]
 
 [build-dependencies]
