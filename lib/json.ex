@@ -5,19 +5,19 @@ defmodule Json do
   end
 
   @doc ~S"""
-  Dencodes a binary string into Elixir terms.
+  Decodes a binary string into Elixir terms.
 
   ## Examples
-    iex> Json.parse(~s|{"hello":"world"}|)
+    iex> Json.decode(~s|{"hello":"world"}|)
     {:ok, %{"hello" => "world"}}
 
-    iex> Json.parse(~s|{"lists":[1,2,3]}|)
+    iex> Json.decode(~s|{"lists":[1,2,3]}|)
     {:ok, %{"lists" => [1,2,3]}}
 
   """
-  def parse_naive(data, opts \\ []), do: naive_parse(data, opts)
+  def decode(data, opts \\ []), do: decode_naive(data, opts)
 
-  def parse!(data, opts \\ []) do
+  def decode!(data, opts \\ []) do
     case parse(data, opts) do
       {:ok, result} -> result
       {:error, error} -> raise Error, message: error
@@ -25,7 +25,9 @@ defmodule Json do
   end
 
   def parse(data, opts \\ []) do
-    handle_parse_result(decode_init(data, opts))
+    data
+    |> decode_init(opts)
+    |> handle_parse_result()
   end
 
   def handle_parse_result(result) do
@@ -33,26 +35,36 @@ defmodule Json do
       {:ok, result} ->
         {:ok, result}
       {:more, resource, acc} ->
-        handle_parse_result(decode_iter(resource, acc))
+        resource
+        |> decode_iter(acc)
+        |> handle_parse_result()
       {:error, error} ->
         {:error, error}
     end
   end
 
-  defp naive_parse(_, _ \\ []), do: exit(:nif_not_loaded)
-  defp decode_init(_, _ \\ []), do: exit(:nif_not_loaded)
-  def decode_iter(_, _ \\ []), do: exit(:nif_not_loaded)
-
   @doc ~S"""
   Decodes a map or struct into a JSON string.
 
   ## Examples
-    iex> Json.stringify(%{hello: "world",list: [%{a: "b"}]})
-    ~s({"hello":"world","list":[{"a":"b"}]})
+    iex> Json.encode(%{hello: "world",list: [%{a: "b"}]})
+    {:ok, ~s({"hello":"world","list":[{"a":"b"}]})}
 
   """
-  def stringify!(data, opts \\ []), do: stringify(data, opts)
-  def stringify(_, _ \\ []), do: exit(:nif_not_loaded)
+  def encode!(data, opts \\ []) do
+    case encode(data, opts) do
+      {:ok, result} -> result
+      {:error, error} -> raise Error, message: error
+    end
+  end
+  def encode(data, opts \\ []), do: encode_dirty(data, opts)
+
+  # NIFs
+  def decode_naive(_, _ \\ []), do: nif_error()
+  def decode_init(_, _),  do: nif_error()
+  def decode_iter(_, _),  do: nif_error()
+  def decode_dirty(_, _), do: nif_error()
+  def encode_dirty(_, _), do: nif_error()
 
   @on_load :__load_nif__
 
@@ -61,4 +73,6 @@ defmodule Json do
     require Rustler
     :ok = Rustler.load_nif(:fast_json, "fast_json")
   end
+
+  defp nif_error, do: :erlang.nif_error(:nif_not_loaded)
 end

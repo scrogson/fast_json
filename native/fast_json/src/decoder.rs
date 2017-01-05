@@ -4,13 +4,14 @@ use rustler::resource::ResourceCell;
 use rustler::schedule::consume_timeslice;
 use rustler::types::tuple::make_tuple;
 use rustler::types::atom::get_atom;
-use ::errors::*;
-use ::parser::{Parser};
-use ::sink::TermSink;
+use errors::*;
+use parser::{Parser};
+use sink::TermSink;
+use util::{ok, error};
 
 pub struct ParserResource(Mutex<Parser>);
 
-pub fn naive_parse<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
+pub fn decode_naive<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
     let source = args[0].decode()?;
 
     match naive(env, source) {
@@ -59,15 +60,3 @@ pub fn decode_iter<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTer
     let more = get_atom("more").unwrap().to_term(env);
     Ok(make_tuple(env, &[more, args[0], sink.to_stack().encode(env)]))
 }
-
-fn ok<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<NifTerm<'a>> {
-    let ok = get_atom("ok").unwrap().to_term(env);
-    Ok(make_tuple(env, &[ok, term]))
-}
-
-fn error<'a>(env: &'a NifEnv, err: Error) -> NifResult<NifTerm<'a>> {
-    let error = get_atom("error").unwrap().to_term(env);
-    let message = format!("{}", err).encode(env);
-    Ok(make_tuple(env, &[error, message]))
-}
-

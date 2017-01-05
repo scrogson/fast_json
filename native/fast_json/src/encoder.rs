@@ -4,12 +4,13 @@ use rustler::types::list::NifListIterator;
 use rustler::types::map::NifMapIterator;
 use json;
 use json::JsonValue;
+use super::util::ok;
 
 pub fn encode<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
     let json_val = try!(term_to_json(env, try!(args[0].decode())));
     let json_str = json::stringify(json_val);
 
-    Ok(json_str.encode(env))
+    ok(env, json_str.encode(env))
 }
 
 fn term_to_json<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<JsonValue> {
