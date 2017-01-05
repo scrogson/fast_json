@@ -1,6 +1,6 @@
 use rustler::{NifTerm, NifEnv, NifEncoder};
-use rustler::map::map_new;
-use rustler::atom::get_atom;
+use rustler::types::map::map_new;
+use rustler::types::atom::get_atom;
 
 pub mod value_sink;
 pub use self::value_sink::ValueSink;

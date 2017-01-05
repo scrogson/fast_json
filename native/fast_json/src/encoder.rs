@@ -1,7 +1,7 @@
 use rustler::{NifDecoder, NifEncoder, NifEnv, NifTerm, NifResult, NifError};
-use rustler::atom::{NifAtom, get_atom};
-use rustler::list::NifListIterator;
-use rustler::map::NifMapIterator;
+use rustler::types::atom::{NifAtom, get_atom};
+use rustler::types::list::NifListIterator;
+use rustler::types::map::NifMapIterator;
 use json;
 use json::JsonValue;
 

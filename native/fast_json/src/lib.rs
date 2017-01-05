@@ -6,7 +6,7 @@ extern crate error_chain;
 extern crate json;
 
 use rustler::{NifEnv, NifTerm};
-use rustler::atom::init_atom;
+use rustler::types::atom::init_atom;
 
 mod decoder;
 mod encoder;
