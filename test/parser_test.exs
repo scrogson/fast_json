@@ -7,6 +7,7 @@ defmodule Json.ParserTest do
   test "reductions" do
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
     count_reductions(data, &decode!/1)
+    count_reductions(data, &threaded_decode/1)
   end
 
   defp count_reductions(data, fun) do
@@ -31,6 +32,13 @@ defmodule Json.ParserTest do
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
     {:ok, expected} = decode_naive(data)
     assert expected == decode!(data)
+  end
+
+  test "threaded" do
+    data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
+    {:ok, expected} = decode(data)
+    {:ok, actual} = threaded_decode(data)
+    assert actual == expected
   end
 
   test "numbers" do

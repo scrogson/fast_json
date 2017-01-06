@@ -21,14 +21,15 @@ use decoder::ParserResource;
 rustler_export_nifs! {
     "Elixir.Json",
     [("decode_naive", 2, decoder::decode_naive),
-     ("decode_init",  2, decoder::decode_init),
-     ("decode_iter",  2, decoder::decode_iter),
+     ("decode_init", 2, decoder::decode_init),
+     ("decode_iter", 2, decoder::decode_iter),
      ("decode_dirty", 2, decoder::decode_naive, DirtyCpu),
-     ("encode",       2, encoder::encode, DirtyCpu)],
+     ("decode_threaded", 2, decoder::decode_threaded),
+     ("encode", 2, encoder::encode, DirtyCpu)],
     Some(load)
 }
 
-fn load(env: &NifEnv, _info: NifTerm) -> bool {
+fn load(env: NifEnv, _info: NifTerm) -> bool {
     resource_struct_init!(ParserResource, env);
 
     init_atom("ok");

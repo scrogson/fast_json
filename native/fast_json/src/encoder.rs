@@ -6,14 +6,14 @@ use json;
 use json::JsonValue;
 use super::util::ok;
 
-pub fn encode<'a>(env: &'a NifEnv, args: &Vec<NifTerm>) -> NifResult<NifTerm<'a>> {
+pub fn encode<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
     let json_val = try!(term_to_json(env, try!(args[0].decode())));
     let json_str = json::stringify(json_val);
 
     ok(env, json_str.encode(env))
 }
 
-fn term_to_json<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<JsonValue> {
+fn term_to_json<'a>(env: NifEnv<'a>, term: NifTerm<'a>) -> NifResult<JsonValue> {
     if let Ok(string) = <&str as NifDecoder>::decode(term) {
         handle_binary(env, string)
     } else if let Ok(iter) = <NifListIterator as NifDecoder>::decode(term) {
@@ -31,7 +31,7 @@ fn term_to_json<'a>(env: &'a NifEnv, term: NifTerm) -> NifResult<JsonValue> {
     }
 }
 
-fn handle_map(env: &NifEnv, iter: NifMapIterator) -> NifResult<JsonValue> {
+fn handle_map<'a>(env: NifEnv<'a>, iter: NifMapIterator<'a>) -> NifResult<JsonValue> {
     use rustler::dynamic::TermType;
 
     let mut map = json::object::Object::new();
@@ -51,7 +51,7 @@ fn handle_map(env: &NifEnv, iter: NifMapIterator) -> NifResult<JsonValue> {
     Ok(JsonValue::Object(map))
 }
 
-fn handle_list(env: &NifEnv, iter: NifListIterator) -> NifResult<JsonValue> {
+fn handle_list<'a>(env: NifEnv<'a>, iter: NifListIterator<'a>) -> NifResult<JsonValue> {
     let values: NifResult<Vec<JsonValue>> = iter.map(|term| {
         term_to_json(env, term)
     }).collect();
@@ -59,11 +59,11 @@ fn handle_list(env: &NifEnv, iter: NifListIterator) -> NifResult<JsonValue> {
     Ok(JsonValue::Array(try!(values)))
 }
 
-fn handle_binary(_env: &NifEnv, string: &str) -> NifResult<JsonValue> {
+fn handle_binary<'a>(_env: NifEnv<'a>, string: &str) -> NifResult<JsonValue> {
     Ok(JsonValue::String(string.to_string()))
 }
 
-fn handle_atom(_env: &NifEnv, atom: NifAtom) -> NifResult<JsonValue> {
+fn handle_atom<'a>(_env: NifEnv<'a>, atom: NifAtom) -> NifResult<JsonValue> {
     if atom == get_atom("true").unwrap() {
         Ok(JsonValue::Boolean(true))
     } else if atom == get_atom("false").unwrap() {
@@ -75,10 +75,10 @@ fn handle_atom(_env: &NifEnv, atom: NifAtom) -> NifResult<JsonValue> {
     }
 }
 
-fn handle_float(_env: &NifEnv, num: f64) -> NifResult<JsonValue> {
+fn handle_float<'a>(_env: NifEnv<'a>, num: f64) -> NifResult<JsonValue> {
     Ok(JsonValue::Number(num.into()))
 }
 
-fn handle_integer(_env: &NifEnv, num: i64) -> NifResult<JsonValue> {
+fn handle_integer<'a>(_env: NifEnv<'a>, num: i64) -> NifResult<JsonValue> {
     Ok(JsonValue::Number(num.into()))
 }

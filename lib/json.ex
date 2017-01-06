@@ -24,6 +24,18 @@ defmodule Json do
     end
   end
 
+  def threaded_decode(data, opts \\ []) do
+    :ok = decode_threaded(data, opts)
+    receive do
+      {:ok, result} ->
+        {:ok, result}
+      {:error, error} ->
+        {:error, error}
+    after 5000 ->
+      {:error, :timeout}
+    end
+  end
+
   def parse(data, opts \\ []) do
     data
     |> decode_init(opts)
@@ -61,9 +73,10 @@ defmodule Json do
 
   # NIFs
   def decode_naive(_, _ \\ []), do: nif_error()
-  def decode_init(_, _),  do: nif_error()
-  def decode_iter(_, _),  do: nif_error()
+  def decode_init(_, _), do: nif_error()
+  def decode_iter(_, _), do: nif_error()
   def decode_dirty(_, _), do: nif_error()
+  def decode_threaded(_, _), do: nif_error()
   def encode_dirty(_, _), do: nif_error()
 
   @on_load :__load_nif__
