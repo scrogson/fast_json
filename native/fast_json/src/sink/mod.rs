@@ -33,39 +33,32 @@ impl<'a> TermSink<'a> {
 
 impl<'a> ValueSink for TermSink<'a> {
     fn push_map(&mut self) {
-        let map = map_new(self.env);
-        self.push(map);
+        self.stack.push(map_new(self.env));
     }
 
     fn push_array(&mut self) {
         let vector: Vec<NifTerm<'a>> = vec![];
-        let value = vector.encode(self.env);
-        self.push(value);
+        self.stack.push(vector.encode(self.env));
     }
 
     fn push_string(&mut self, string: String) {
-        let value = string.encode(self.env);
-        self.push(value);
+        self.stack.push(string.encode(self.env));
     }
 
     fn push_integer(&mut self, integer: i64) {
-        let value = integer.encode(self.env);
-        self.push(value);
+        self.stack.push(integer.encode(self.env));
     }
 
     fn push_float(&mut self, float: f64) {
-        let value = float.encode(self.env);
-        self.push(value);
+        self.stack.push(float.encode(self.env));
     }
 
     fn push_bool(&mut self, boolean: bool) {
-        let value = boolean.encode(self.env);
-        self.push(value);
+        self.stack.push(boolean.encode(self.env));
     }
 
     fn push_nil(&mut self) {
-        let nil = get_atom("nil").unwrap().to_term(self.env);
-        self.push(nil);
+        self.stack.push(get_atom("nil").unwrap().to_term(self.env));
     }
 
     fn finalize_map(&mut self) {
@@ -74,21 +67,20 @@ impl<'a> ValueSink for TermSink<'a> {
 
     fn finalize_array(&mut self) {
         let array = self.pop();
-        self.push(array.list_reverse().ok().unwrap());
+        self.stack.push(array.list_reverse().ok().unwrap());
     }
 
     fn pop_insert_map(&mut self, key: String) {
         let value = self.pop();
         let map = self.pop();
-        let new_map = map.map_put(key.encode(self.env), value).ok().unwrap();
 
-        self.push(new_map);
+        self.stack.push(map.map_put(key.encode(self.env), value).ok().unwrap());
     }
 
     fn pop_insert_array(&mut self) {
         let value = self.pop();
         let array = self.pop();
 
-        self.push(array.list_prepend(value));
+        self.stack.push(array.list_prepend(value));
     }
 }
