@@ -66,7 +66,7 @@ pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifRe
     let source = args[0].decode()?;
     let mut parser = Parser::new(source);
 
-    thread::spawn(caller, move |env| {
+    thread::spawn::<thread::ThreadSpawner, _>(caller, move |env| {
         let mut sink = TermSink::new(env, vec![]);
 
         loop {
