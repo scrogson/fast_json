@@ -10,7 +10,7 @@ defmodule ParserBench do
   end
 
   bench "Json", [json: gen_json] do
-    Json.parse!(json)
+    Json.decode!(json)
   end
 
   # UTF8 escaping
@@ -23,7 +23,7 @@ defmodule ParserBench do
   end
 
   bench "UTF-8 unescaping (Json)", [utf8: gen_utf8] do
-    Json.parse!(utf8)
+    Json.decode!(utf8)
   end
 
   defp gen_json do
@@ -41,7 +41,7 @@ defmodule ParserBench do
   end
 
   bench "Issue 90 (Json)", [json: gen_issue90] do
-    Json.parse!(json)
+    Json.decode!(json)
   end
 
   defp gen_utf8 do

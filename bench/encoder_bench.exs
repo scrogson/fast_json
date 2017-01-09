@@ -11,7 +11,7 @@ defmodule EncoderBench do
   end
 
   bench "lists (Json)", [list: gen_list] do
-    Json.stringify!(list)
+    Json.encode!(list)
   end
 
   # Maps
@@ -24,7 +24,7 @@ defmodule EncoderBench do
   end
 
   bench "maps (JSON)", [map: gen_map] do
-    Json.stringify!(map)
+    Json.encode!(map)
   end
 
   # Strings
@@ -37,7 +37,7 @@ defmodule EncoderBench do
   end
 
   bench "strings (Json)", [string: gen_string] do
-    Json.stringify!(string)
+    Json.encode!(string)
   end
 
   # String escaping
@@ -55,7 +55,7 @@ defmodule EncoderBench do
   end
 
   bench "structs (JSON)", [structs: gen_structs] do
-    Json.stringify!(structs)
+    Json.encode!(structs)
   end
 
   bench "Poison", [data: gen_data] do
@@ -67,7 +67,7 @@ defmodule EncoderBench do
   end
 
   bench "JSON", [data: gen_data] do
-    Json.stringify!(data)
+    Json.encode!(data)
   end
 
   bench "Poison (pretty)", [data: gen_data] do
