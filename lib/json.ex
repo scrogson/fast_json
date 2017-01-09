@@ -1,4 +1,15 @@
 defmodule Json do
+  @moduledoc """
+  Native JSON encoding/decoding library for Elixir using Rust.
+  """
+
+  @on_load :init
+
+  @doc false
+  def init do
+    require Rustler
+    :ok = Rustler.load_nif(:fast_json, "fast_json")
+  end
 
   defmodule Error do
     defexception [:message]
@@ -78,14 +89,6 @@ defmodule Json do
   def decode_dirty(_, _), do: nif_error()
   def decode_threaded(_, _), do: nif_error()
   def encode_dirty(_, _), do: nif_error()
-
-  @on_load :__load_nif__
-
-  @doc false
-  def __load_nif__ do
-    require Rustler
-    :ok = Rustler.load_nif(:fast_json, "fast_json")
-  end
 
   defp nif_error, do: :erlang.nif_error(:nif_not_loaded)
 end
