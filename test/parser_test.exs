@@ -15,11 +15,11 @@ defmodule Json.ParserTest do
     pid = spawn(fn ->
       me = self()
       start = :os.timestamp()
-      r0 = Process.info(me, :reductions)
+      {_, r0} = Process.info(me, :reductions)
       _decoded = fun.(data)
       t = :timer.now_diff(:os.timestamp(), start)
-      r1 = Process.info(me, :reductions)
-      send(parent, {me, {t, r0, r1}})
+      {_, r1} = Process.info(me, :reductions)
+      send(parent, {me, [time: t / 1_000_000, starting_reductions: r0, ending_reductions: r1, diff: r1 - r0]})
     end)
 
     receive do
