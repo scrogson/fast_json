@@ -6,8 +6,8 @@ defmodule Json.ParserTest do
 
   test "reductions" do
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
-    count_reductions(data, &decode!/1)
-    count_reductions(data, &threaded_decode/1)
+    IO.inspect count_reductions(data, &decode!/1)
+    IO.inspect count_reductions(data, &threaded_decode/1)
   end
 
   defp count_reductions(data, fun) do
@@ -16,15 +16,14 @@ defmodule Json.ParserTest do
       me = self()
       start = :os.timestamp()
       {_, r0} = Process.info(me, :reductions)
-      _decoded = fun.(data)
+      _ = fun.(data)
       t = :timer.now_diff(:os.timestamp(), start)
       {_, r1} = Process.info(me, :reductions)
-      send(parent, {me, [time: t / 1_000_000, starting_reductions: r0, ending_reductions: r1, diff: r1 - r0]})
+      send(parent, {me, time: t / 1_000_000, starting_reds: r0, ending_reds: r1, diff: r1 - r0})
     end)
 
     receive do
-      {^pid, result} ->
-        IO.inspect result
+      {^pid, result} -> result
     end
   end
 
