@@ -1,4 +1,4 @@
 %{"benchfella": {:hex, :benchfella, "0.3.3", "bbde48b5fe1ef556baa7ad933008e214e050e81ddb0916350715f5759fb35c0c", [:mix], []},
   "jiffy": {:hex, :jiffy, "0.14.7", "9f33b893edd6041ceae03bc1e50b412e858cc80b46f3d7535a7a9940a79a1c37", [:make, :rebar], []},
   "poison": {:hex, :poison, "3.0.0", "625ebd64d33ae2e65201c2c14d6c85c27cc8b68f2d0dd37828fde9c6920dd131", [:mix], []},
-  "rustler": {:git, "https://github.com/hansihe/rustler.git", "c89694215d2562ada259458d96d14f288337809b", [sparse: "rustler_mix"]}}
+  "rustler": {:git, "https://github.com/scrogson/rustler.git", "2ff8507c70957858f7234af318d36a7ef1ed5686", [branch: "use_rustler", sparse: "rustler_mix"]}}

@@ -2,14 +2,7 @@ defmodule Json do
   @moduledoc """
   Native JSON encoding/decoding library for Elixir using Rust.
   """
-
-  @on_load :init
-
-  @doc false
-  def init do
-    require Rustler
-    :ok = Rustler.load_nif(:fast_json, "fast_json")
-  end
+  use Rustler, otp_app: :fast_json
 
   defmodule Error do
     defexception [:message]
