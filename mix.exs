@@ -22,7 +22,7 @@ defmodule Json.Mixfile do
   end
 
   defp deps do
-    [{:rustler, github: "scrogson/rustler", branch: "use_rustler", sparse: "rustler_mix"},
+    [{:rustler, github: "hansihe/rustler", sparse: "rustler_mix"},
 
      # Benchmarking
      {:benchfella, "~> 0.3", only: :bench},

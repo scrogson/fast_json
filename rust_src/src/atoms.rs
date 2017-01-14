@@ -1,7 +1,7 @@
 rustler_atoms! {
+    atom more;
     atom ok;
     atom error;
-    atom more;
     atom nil;
     atom __true__ = "true";
     atom __false__ = "false";
