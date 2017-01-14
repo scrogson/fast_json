@@ -1,6 +1,6 @@
 use rustler::{NifTerm, NifEnv, NifEncoder};
 use rustler::types::map::map_new;
-use rustler::types::atom::get_atom;
+use atoms;
 
 pub mod value_sink;
 pub use self::value_sink::ValueSink;
@@ -58,7 +58,7 @@ impl<'a> ValueSink for TermSink<'a> {
     }
 
     fn push_nil(&mut self) {
-        self.stack.push(get_atom("nil").unwrap().to_term(self.env));
+        self.stack.push(atoms::nil().to_term(self.env));
     }
 
     fn finalize_map(&mut self) {

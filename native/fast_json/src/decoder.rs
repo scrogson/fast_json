@@ -2,13 +2,12 @@ use std::sync::Mutex;
 use rustler::{NifEncoder, NifEnv, NifTerm, NifResult, NifError};
 use rustler::resource::ResourceCell;
 use rustler::schedule::consume_timeslice;
-use rustler::types::tuple::make_tuple;
-use rustler::types::atom::get_atom;
 use rustler::thread;
 use errors::*;
-use parser::{Parser};
+use parser::Parser;
 use sink::TermSink;
 use util::{ok, error};
+use atoms;
 
 pub struct ParserResource(Mutex<Parser>);
 
@@ -58,8 +57,7 @@ pub fn decode_iter<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<Ni
         }
     }
 
-    let more = get_atom("more").unwrap().to_term(env);
-    Ok(make_tuple(env, &[more, args[0], sink.to_stack().encode(env)]))
+    Ok((atoms::more(), args[0], sink.to_stack()).encode(env))
 }
 
 pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
@@ -77,5 +75,5 @@ pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifRe
             }
         }
     });
-    Ok(get_atom("ok").unwrap().to_term(caller))
+    Ok(atoms::ok().to_term(caller))
 }

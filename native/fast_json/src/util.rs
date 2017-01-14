@@ -1,15 +1,12 @@
 use rustler::{NifEncoder, NifEnv, NifTerm, NifResult};
-use rustler::types::atom::get_atom;
-use rustler::types::tuple::make_tuple;
+use atoms;
 use errors::*;
 
 pub fn ok<'a>(env: NifEnv<'a>, term: NifTerm<'a>) -> NifResult<NifTerm<'a>> {
-    let ok = get_atom("ok").unwrap().to_term(env);
-    Ok(make_tuple(env, &[ok, term]))
+    Ok((atoms::ok(), term).encode(env))
 }
 
 pub fn error(env: NifEnv, err: Error) -> NifResult<NifTerm> {
-    let error = get_atom("error").unwrap().to_term(env);
     let message = format!("{}", err).encode(env);
-    Ok(make_tuple(env, &[error, message]))
+    Ok((atoms::error(), message).encode(env))
 }
