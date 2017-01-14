@@ -65,9 +65,9 @@ fn handle_binary<'a>(_env: NifEnv<'a>, string: &str) -> NifResult<JsonValue> {
 }
 
 fn handle_atom<'a>(_env: NifEnv<'a>, atom: NifAtom) -> NifResult<JsonValue> {
-    if atom == atoms::atom_true() {
+    if atom == atoms::__true__() {
         Ok(JsonValue::Boolean(true))
-    } else if atom == atoms::atom_false() {
+    } else if atom == atoms::__false__() {
         Ok(JsonValue::Boolean(false))
     } else if atom == atoms::nil() {
         Ok(JsonValue::Null)

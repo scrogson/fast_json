@@ -3,6 +3,6 @@ rustler_atoms! {
     atom error;
     atom more;
     atom nil;
-    atom atom_true = "true";
-    atom atom_false = "false";
+    atom __true__ = "true";
+    atom __false__ = "false";
 }
