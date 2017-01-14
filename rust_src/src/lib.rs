@@ -6,6 +6,7 @@ extern crate json;
 
 use rustler::{NifEnv, NifTerm};
 use rustler::schedule::NifScheduleFlags::*;
+use decoder::ParserResource;
 
 mod decoder;
 mod encoder;
@@ -13,19 +14,7 @@ mod errors;
 mod parser;
 mod sink;
 mod util;
-
-mod atoms {
-    rustler_atoms! {
-        atom ok;
-        atom error;
-        atom more;
-        atom nil;
-        atom atom_true = "true";
-        atom atom_false = "false";
-    }
-}
-
-use decoder::ParserResource;
+mod atoms;
 
 rustler_export_nifs! {
     "Elixir.Json",
@@ -40,6 +29,5 @@ rustler_export_nifs! {
 
 fn load(env: NifEnv, _info: NifTerm) -> bool {
     resource_struct_init!(ParserResource, env);
-
     true
 }
