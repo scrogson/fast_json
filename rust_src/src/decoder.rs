@@ -58,17 +58,17 @@ pub fn decode_iter<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<Ni
 }
 
 pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
-    let source = args[0].decode()?;
-    let mut parser = Parser::new(source);
+    let source: String = args[0].decode()?;
 
     thread::spawn::<thread::ThreadSpawner, _>(caller, move |env| {
-        let mut sink = TermSink::new(env, vec![]);
-
-        loop {
-            match parser.parse(&mut sink) {
-                Ok(true) => return ok(env, sink.pop()).ok().unwrap(),
-                Ok(false) => continue,
-                Err(err) => return error(env, err).ok().unwrap(),
+        match json::parse(&source) {
+            Ok(json) => {
+                let term = json_to_term(env, json);
+                (atoms::ok(), term).encode(env)
+            }
+            Err(err) => {
+                let error = format!("{}", err).encode(env);
+                (atoms::error(), error).encode(env)
             }
         }
     });
