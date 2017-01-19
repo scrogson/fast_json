@@ -1,9 +1,11 @@
+use json::{self, JsonValue};
+use rustler::types::map::map_new;
+
 use std::sync::Mutex;
 use rustler::{NifEncoder, NifEnv, NifTerm, NifResult, NifError};
 use rustler::resource::ResourceCell;
 use rustler::schedule::consume_timeslice;
 use rustler::thread;
-use errors::*;
 use parser::Parser;
 use sink::TermSink;
 use util::{ok, error};
@@ -12,21 +14,16 @@ use atoms;
 pub struct ParserResource(Mutex<Parser>);
 
 pub fn decode_naive<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
-    let source = args[0].decode()?;
+    let data = args[0].decode()?;
 
-    match naive(env, source) {
-        Ok(term) => ok(env, term),
-        Err(err) => error(env, err)
-    }
-}
-
-pub fn naive<'a>(env: NifEnv<'a>, source: String) -> Result<NifTerm<'a>> {
-    let mut sink = TermSink::new(env, vec![]);
-    let mut parser = Parser::new(source);
-
-    loop {
-        if parser.parse(&mut sink)? {
-            return Ok(sink.pop());
+    match json::parse(data) {
+        Ok(json) => {
+            let term = json_to_term(env, json);
+            Ok((atoms::ok(), term).encode(env))
+        }
+        Err(err) => {
+            let error = format!("{}", err).encode(env);
+            Ok((atoms::error(), error).encode(env))
         }
     }
 }
@@ -53,7 +50,7 @@ pub fn decode_iter<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<Ni
         match parser.parse(&mut sink) {
             Ok(true) => return ok(env, sink.pop()),
             Ok(false) => continue,
-            Err(err) => return error(env, err)
+            Err(err) => return error(env, err),
         }
     }
 
@@ -71,9 +68,39 @@ pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifRe
             match parser.parse(&mut sink) {
                 Ok(true) => return ok(env, sink.pop()).ok().unwrap(),
                 Ok(false) => continue,
-                Err(err) => return error(env, err).ok().unwrap()
+                Err(err) => return error(env, err).ok().unwrap(),
             }
         }
     });
     Ok(atoms::ok().to_term(caller))
+}
+
+fn json_to_term<'a>(env: NifEnv<'a>, value: JsonValue) -> NifTerm<'a> {
+    match value {
+        JsonValue::Null => atoms::nil().to_term(env),
+        JsonValue::Short(s) => s.encode(env),
+        JsonValue::String(s) => s.encode(env),
+        JsonValue::Number(n) => {
+            let (_, _, exponent) = n.as_parts();
+            if exponent != 0 {
+                f64::from(n).encode(env)
+            } else {
+                i64::from(n).encode(env)
+            }
+        }
+        JsonValue::Boolean(b) => b.encode(env),
+        JsonValue::Object(mut obj) => {
+            obj.iter_mut().fold(map_new(env), |map, (key, value)| {
+                let key_term = key.encode(env);
+                let value_term = json_to_term(env, value.take());
+                map.map_put(key_term, value_term).ok().unwrap()
+            })
+        }
+        JsonValue::Array(values) => {
+            let terms: Vec<NifTerm<'a>> = values.into_iter()
+                .map(|v| json_to_term(env, v))
+                .collect();
+            terms.encode(env)
+        }
+    }
 }

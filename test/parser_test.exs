@@ -6,8 +6,10 @@ defmodule Json.ParserTest do
 
   test "reductions" do
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
+    #IO.inspect count_reductions(data, &Json.decode/1)
+    #IO.inspect count_reductions(data, &Json.decode_naive/1)
     IO.inspect count_reductions(data, &decode!/1)
-    IO.inspect count_reductions(data, &threaded_decode/1)
+    #IO.inspect count_reductions(data, &threaded_decode/1)
   end
 
   defp count_reductions(data, fun) do
