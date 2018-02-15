@@ -22,10 +22,6 @@ impl<'a> TermSink<'a> {
         self.stack
     }
 
-    pub fn push(&mut self, value: Term<'a>) {
-        self.stack.push(value);
-    }
-
     pub fn pop(&mut self) -> Term<'a> {
         self.stack.pop().unwrap()
     }
