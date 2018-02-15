@@ -2,8 +2,8 @@ use json::{self, JsonValue};
 use rustler::types::map::map_new;
 
 use std::sync::Mutex;
-use rustler::{NifEncoder, NifEnv, NifTerm, NifResult, NifError};
-use rustler::resource::ResourceCell;
+use rustler::{Encoder, Env, Term, NifResult, Error};
+use rustler::resource::ResourceArc;
 use rustler::schedule::consume_timeslice;
 use rustler::thread;
 use parser::Parser;
@@ -13,7 +13,7 @@ use atoms;
 
 pub struct ParserResource(Mutex<Parser>);
 
-pub fn decode_naive<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
+pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let data = args[0].decode()?;
 
     match json::parse(data) {
@@ -28,21 +28,21 @@ pub fn decode_naive<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<N
     }
 }
 
-pub fn decode_init<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
+pub fn decode_init<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let source = args[0].decode()?;
-    let resource = ResourceCell::new(ParserResource(Mutex::new(Parser::new(source))));
-    let vector: Vec<NifTerm<'a>> = vec![];
+    let resource = ResourceArc::new(ParserResource(Mutex::new(Parser::new(source))));
+    let vector: Vec<Term<'a>> = vec![];
 
     decode_iter(env, &vec![resource.encode(env), vector.encode(env)])
 }
 
-pub fn decode_iter<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
-    let resource: ResourceCell<ParserResource> = args[0].decode()?;
-    let sink_stack: Vec<NifTerm> = args[1].decode()?;
+pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<ParserResource> = args[0].decode()?;
+    let sink_stack: Vec<Term> = args[1].decode()?;
 
     let mut sink = TermSink::new(env, sink_stack);
     let mut parser = match resource.0.try_lock() {
-        Err(_) => return Err(NifError::BadArg),
+        Err(_) => return Err(Error::BadArg),
         Ok(guard) => guard,
     };
 
@@ -57,7 +57,7 @@ pub fn decode_iter<'a>(env: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<Ni
     Ok((atoms::more(), args[0], sink.to_stack()).encode(env))
 }
 
-pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifResult<NifTerm<'a>> {
+pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let source: String = args[0].decode()?;
 
     thread::spawn::<thread::ThreadSpawner, _>(caller, move |env| {
@@ -75,7 +75,7 @@ pub fn decode_threaded<'a>(caller: NifEnv<'a>, args: &Vec<NifTerm<'a>>) -> NifRe
     Ok(atoms::ok().to_term(caller))
 }
 
-fn json_to_term<'a>(env: NifEnv<'a>, value: JsonValue) -> NifTerm<'a> {
+fn json_to_term<'a>(env: Env<'a>, value: JsonValue) -> Term<'a> {
     match value {
         JsonValue::Null => atoms::nil().to_term(env),
         JsonValue::Short(s) => s.encode(env),
@@ -97,7 +97,7 @@ fn json_to_term<'a>(env: NifEnv<'a>, value: JsonValue) -> NifTerm<'a> {
             })
         }
         JsonValue::Array(values) => {
-            let terms: Vec<NifTerm<'a>> = values.into_iter()
+            let terms: Vec<Term<'a>> = values.into_iter()
                 .map(|v| json_to_term(env, v))
                 .collect();
             terms.encode(env)

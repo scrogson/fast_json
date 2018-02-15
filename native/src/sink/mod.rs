@@ -1,4 +1,4 @@
-use rustler::{NifTerm, NifEnv, NifEncoder};
+use rustler::{Term, Env, Encoder};
 use rustler::types::map::map_new;
 use atoms;
 
@@ -6,27 +6,27 @@ pub mod value_sink;
 pub use self::value_sink::ValueSink;
 
 pub struct TermSink<'a> {
-    env: NifEnv<'a>,
-    stack: Vec<NifTerm<'a>>,
+    env: Env<'a>,
+    stack: Vec<Term<'a>>,
 }
 
 impl<'a> TermSink<'a> {
-    pub fn new(env: NifEnv<'a>, stack: Vec<NifTerm<'a>>) -> TermSink<'a> {
+    pub fn new(env: Env<'a>, stack: Vec<Term<'a>>) -> TermSink<'a> {
         TermSink {
             env: env,
             stack: stack,
         }
     }
 
-    pub fn to_stack(self) -> Vec<NifTerm<'a>> {
+    pub fn to_stack(self) -> Vec<Term<'a>> {
         self.stack
     }
 
-    pub fn push(&mut self, value: NifTerm<'a>) {
+    pub fn push(&mut self, value: Term<'a>) {
         self.stack.push(value);
     }
 
-    pub fn pop(&mut self) -> NifTerm<'a> {
+    pub fn pop(&mut self) -> Term<'a> {
         self.stack.pop().unwrap()
     }
 }
@@ -37,7 +37,7 @@ impl<'a> ValueSink for TermSink<'a> {
     }
 
     fn push_array(&mut self) {
-        let vector: Vec<NifTerm<'a>> = vec![];
+        let vector: Vec<Term<'a>> = vec![];
         self.stack.push(vector.encode(self.env));
     }
 

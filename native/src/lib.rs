@@ -4,8 +4,8 @@
 #[macro_use] extern crate lazy_static;
 extern crate json;
 
-use rustler::{NifEnv, NifTerm};
-use rustler::schedule::NifScheduleFlags::*;
+use rustler::{Env, Term};
+use rustler::schedule::SchedulerFlags::*;
 use decoder::ParserResource;
 
 mod decoder;
@@ -27,7 +27,7 @@ rustler_export_nifs! {
     Some(load)
 }
 
-fn load(env: NifEnv, _info: NifTerm) -> bool {
+fn load(env: Env, _info: Term) -> bool {
     resource_struct_init!(ParserResource, env);
     true
 }
