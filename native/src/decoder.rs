@@ -2,7 +2,7 @@ use json::{self, JsonValue};
 use rustler::types::map::map_new;
 
 use std::sync::Mutex;
-use rustler::{Encoder, Env, Term, NifResult, Error};
+use rustler::{Encoder, Env, Term, Error};
 use rustler::resource::ResourceArc;
 use rustler::schedule::consume_timeslice;
 use rustler::thread;
@@ -13,7 +13,7 @@ use atoms;
 
 pub struct ParserResource(Mutex<Parser>);
 
-pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let data = args[0].decode()?;
 
     match json::parse(data) {
@@ -28,7 +28,7 @@ pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
     }
 }
 
-pub fn decode_init<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn decode_init<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let source = args[0].decode()?;
     let resource = ResourceArc::new(ParserResource(Mutex::new(Parser::new(source))));
     let vector: Vec<Term<'a>> = vec![];
@@ -36,7 +36,7 @@ pub fn decode_init<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     decode_iter(env, &vec![resource.encode(env), vector.encode(env)])
 }
 
-pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let resource: ResourceArc<ParserResource> = args[0].decode()?;
     let sink_stack: Vec<Term> = args[1].decode()?;
 
@@ -57,7 +57,7 @@ pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::more(), args[0], sink.to_stack()).encode(env))
 }
 
-pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let source: String = args[0].decode()?;
 
     thread::spawn::<thread::ThreadSpawner, _>(caller, move |env| {

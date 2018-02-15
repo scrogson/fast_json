@@ -1,20 +1,20 @@
-use rustler::{Decoder, Encoder, Env, Term, NifResult, Error};
+use rustler::{Decoder, Encoder, Env, Term, Error};
 use rustler::types::atom::Atom;
 use rustler::types::list::ListIterator;
 use rustler::types::map::MapIterator;
 use json;
 use json::JsonValue;
-use super::util::ok;
+use util::ok;
 use atoms;
 
-pub fn encode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let json_val = try!(term_to_json(env, try!(args[0].decode())));
+pub fn encode<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
+    let json_val = term_to_json(env, args[0].decode()?)?;
     let json_str = json::stringify(json_val);
 
     ok(env, json_str.encode(env))
 }
 
-fn term_to_json<'a>(env: Env<'a>, term: Term<'a>) -> NifResult<JsonValue> {
+fn term_to_json<'a>(env: Env<'a>, term: Term<'a>) -> Result<JsonValue, Error> {
     if let Ok(string) = <&str as Decoder>::decode(term) {
         handle_binary(env, string)
     } else if let Ok(iter) = <ListIterator as Decoder>::decode(term) {
@@ -32,7 +32,7 @@ fn term_to_json<'a>(env: Env<'a>, term: Term<'a>) -> NifResult<JsonValue> {
     }
 }
 
-fn handle_map<'a>(env: Env<'a>, iter: MapIterator<'a>) -> NifResult<JsonValue> {
+fn handle_map<'a>(env: Env<'a>, iter: MapIterator<'a>) -> Result<JsonValue, Error> {
     use rustler::dynamic::TermType;
 
     let mut map = json::object::Object::new();
@@ -52,19 +52,19 @@ fn handle_map<'a>(env: Env<'a>, iter: MapIterator<'a>) -> NifResult<JsonValue> {
     Ok(JsonValue::Object(map))
 }
 
-fn handle_list<'a>(env: Env<'a>, iter: ListIterator<'a>) -> NifResult<JsonValue> {
-    let values: NifResult<Vec<JsonValue>> = iter.map(|term| {
+fn handle_list<'a>(env: Env<'a>, iter: ListIterator<'a>) -> Result<JsonValue, Error> {
+    let values: Result<Vec<JsonValue>, _> = iter.map(|term| {
         term_to_json(env, term)
     }).collect();
 
-    Ok(JsonValue::Array(try!(values)))
+    Ok(JsonValue::Array(values?))
 }
 
-fn handle_binary<'a>(_env: Env<'a>, string: &str) -> NifResult<JsonValue> {
+fn handle_binary<'a>(_env: Env<'a>, string: &str) -> Result<JsonValue, Error> {
     Ok(JsonValue::String(string.to_string()))
 }
 
-fn handle_atom<'a>(_env: Env<'a>, atom: Atom) -> NifResult<JsonValue> {
+fn handle_atom<'a>(_env: Env<'a>, atom: Atom) -> Result<JsonValue, Error> {
     if atom == atoms::__true__() {
         Ok(JsonValue::Boolean(true))
     } else if atom == atoms::__false__() {
@@ -76,10 +76,10 @@ fn handle_atom<'a>(_env: Env<'a>, atom: Atom) -> NifResult<JsonValue> {
     }
 }
 
-fn handle_float<'a>(_env: Env<'a>, num: f64) -> NifResult<JsonValue> {
+fn handle_float<'a>(_env: Env<'a>, num: f64) -> Result<JsonValue, Error> {
     Ok(JsonValue::Number(num.into()))
 }
 
-fn handle_integer<'a>(_env: Env<'a>, num: i64) -> NifResult<JsonValue> {
+fn handle_integer<'a>(_env: Env<'a>, num: i64) -> Result<JsonValue, Error> {
     Ok(JsonValue::Number(num.into()))
 }
