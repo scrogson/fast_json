@@ -18,7 +18,7 @@ erl_crash.dump
 
 # Ignore rust build artifacts
 /native/fast_json/target
-/priv/rustler
+/priv/native/*.so
 
 # Ignore benchmark snapshots and graphs
 /bench/snapshots
