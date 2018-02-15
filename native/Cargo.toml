@@ -10,16 +10,15 @@ crate-type = ["dylib"]
 
 [features]
 default = []
-with-syntex = ["rustler_codegen/with-syntex"]
 
 [build-dependencies]
-rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
+rustler_codegen = { git = "https://github.com/hansihe/Rustler", branch = "remove_nif_from_types" }
 #rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
 
 [dependencies]
 error-chain = "0.7.2"
-rustler = { git = "https://github.com/hansihe/Rustler" }
-rustler_codegen = { git = "https://github.com/hansihe/Rustler" }
+rustler = { git = "https://github.com/hansihe/Rustler", branch = "remove_nif_from_types" }
+rustler_codegen = { git = "https://github.com/hansihe/Rustler", branch = "remove_nif_from_types" }
 #rustler = { path = "/Users/scrogson/Forks/Rustler" }
 #rustler_codegen = { path = "/Users/scrogson/Forks/Rustler/rustler_codegen" }
 json = "0.11.0"
