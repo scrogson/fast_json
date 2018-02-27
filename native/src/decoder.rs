@@ -72,12 +72,12 @@ pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a
             }
         }
     });
-    Ok(atoms::ok().to_term(caller))
+    Ok(atoms::ok().encode(caller))
 }
 
 fn json_to_term<'a>(env: Env<'a>, value: JsonValue) -> Term<'a> {
     match value {
-        JsonValue::Null => atoms::nil().to_term(env),
+        JsonValue::Null => atoms::nil().encode(env),
         JsonValue::Short(s) => s.encode(env),
         JsonValue::String(s) => s.encode(env),
         JsonValue::Number(n) => {
