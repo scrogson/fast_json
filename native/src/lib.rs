@@ -1,19 +1,30 @@
-#[macro_use] extern crate rustler;
-#[macro_use] extern crate error_chain;
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate error_chain;
 extern crate json;
+#[macro_use]
+extern crate lazy_static;
+extern crate num_cpus;
+#[macro_use]
+extern crate rustler;
+extern crate scoped_pool;
 
 use rustler::{Env, Term};
 use rustler::schedule::SchedulerFlags::*;
+use scoped_pool::Pool;
+
 use decoder::ParserResource;
 
+mod atoms;
 mod decoder;
 mod encoder;
 mod errors;
 mod parser;
 mod sink;
 mod util;
-mod atoms;
+
+lazy_static! {
+    static ref POOL: Pool = Pool::new(num_cpus::get());
+}
 
 rustler_export_nifs! {
     "Elixir.Json",

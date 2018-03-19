@@ -1,15 +1,18 @@
+use std::sync::Mutex;
+
 use json::{self, JsonValue};
 use rustler::types::map::map_new;
-
-use std::sync::Mutex;
-use rustler::{Encoder, Env, Term, Error};
+use rustler::{Encoder, Env, Error, Term};
+use rustler::env::OwnedEnv;
 use rustler::resource::ResourceArc;
 use rustler::schedule::consume_timeslice;
-use rustler::thread;
-use parser::Parser;
-use sink::TermSink;
-use util::{ok, error};
+//use rustler::thread;
+
 use atoms;
+use parser::Parser;
+use POOL;
+use sink::TermSink;
+use util::{error, ok};
 
 pub struct ParserResource(Mutex<Parser>);
 
@@ -58,20 +61,31 @@ pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Erro
 }
 
 pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
-    let source: String = args[0].decode()?;
+    let mut owned_env = OwnedEnv::new();
 
-    thread::spawn::<thread::ThreadSpawner, _>(caller, move |env| {
-        match json::parse(&source) {
-            Ok(json) => {
-                let term = json_to_term(env, json);
-                (atoms::ok(), term).encode(env)
+    let source = owned_env.save(args[0]);
+    let caller_pid = caller.pid();
+
+    POOL.spawn(move || {
+        owned_env.send_and_clear(&caller_pid, |env| {
+            match source.load(env).decode::<String>() {
+                Ok(source) => {
+                    match json::parse(&source) {
+                        Ok(json) => {
+                            let term = json_to_term(env, json);
+                            (atoms::ok(), term).encode(env)
+                        }
+                        Err(err) => {
+                            let error = format!("{}", err).encode(env);
+                            (atoms::error(), error).encode(env)
+                        }
+                    }
+                }
+                Err(_) => atoms::error().encode(env)
             }
-            Err(err) => {
-                let error = format!("{}", err).encode(env);
-                (atoms::error(), error).encode(env)
-            }
-        }
+        });
     });
+
     Ok(atoms::ok().encode(caller))
 }
 
@@ -89,17 +103,13 @@ fn json_to_term<'a>(env: Env<'a>, value: JsonValue) -> Term<'a> {
             }
         }
         JsonValue::Boolean(b) => b.encode(env),
-        JsonValue::Object(mut obj) => {
-            obj.iter_mut().fold(map_new(env), |map, (key, value)| {
-                let key_term = key.encode(env);
-                let value_term = json_to_term(env, value.take());
-                map.map_put(key_term, value_term).ok().unwrap()
-            })
-        }
+        JsonValue::Object(mut obj) => obj.iter_mut().fold(map_new(env), |map, (key, value)| {
+            let key_term = key.encode(env);
+            let value_term = json_to_term(env, value.take());
+            map.map_put(key_term, value_term).ok().unwrap()
+        }),
         JsonValue::Array(values) => {
-            let terms: Vec<Term<'a>> = values.into_iter()
-                .map(|v| json_to_term(env, v))
-                .collect();
+            let terms: Vec<Term<'a>> = values.into_iter().map(|v| json_to_term(env, v)).collect();
             terms.encode(env)
         }
     }

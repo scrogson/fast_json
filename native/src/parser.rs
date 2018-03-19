@@ -1,5 +1,5 @@
-use ::sink::{TermSink, ValueSink};
-use ::errors::*;
+use sink::{TermSink, ValueSink};
+use errors::*;
 
 const BACKSPACE: char = 8 as char;
 const FORM_FEED: char = 12 as char;
@@ -7,9 +7,7 @@ const FORM_FEED: char = 12 as char;
 #[derive(Debug)]
 enum Stack {
     Array,
-    Object {
-        key: Option<String>,
-    }
+    Object { key: Option<String> },
 }
 
 pub struct Parser {
@@ -24,10 +22,10 @@ pub struct Parser {
 }
 
 fn is_whitespace(value: u8) -> bool {
-   match value {
-       b'\t' | b'\r' | b'\n' | b' ' => true,
-       _ => false,
-   }
+    match value {
+        b'\t' | b'\r' | b'\n' | b' ' => true,
+        _ => false,
+    }
 }
 
 impl Parser {
@@ -35,7 +33,7 @@ impl Parser {
         Parser {
             s: s,
             i: 0,
-            stack: vec![]
+            stack: vec![],
         }
     }
 
@@ -62,14 +60,14 @@ impl Parser {
         let mut iter = self.s[start..].char_indices();
         while let Some((j, c)) = iter.next() {
             if c == '"' {
-                strval += &self.s[self.i .. start + j];
+                strval += &self.s[self.i..start + j];
                 self.i = start + j;
-                self.i += 1;  // also skip the quote mark itself
+                self.i += 1; // also skip the quote mark itself
                 return Ok(strval);
             } else if c == '\\' {
-                strval += &self.s[self.i .. start + j];
+                strval += &self.s[self.i..start + j];
                 self.i = start + j;
-                self.i += 1;  // also skip the backslash itself
+                self.i += 1; // also skip the backslash itself
                 match iter.next() {
                     None => break,
                     Some((_, esc_char)) => {
@@ -83,16 +81,21 @@ impl Parser {
                             'r' => '\r',
                             't' => '\t',
                             'u' => panic!("oh no not supported yet"),
-//                 elif c == 'u':
-//                     if self.i + 4 >= len(self.s):
-//                         break
-//                     hexcode = self.s[self.i:self.i + 4]
-//                     for c in hexcode:
-//                         if c not in '0123456789abcdefABCDEF':
-//                             self.fail("invalid \\u escape")
-//                     self.i += 4
-//                     strval += chr(int(hexcode, 16))
-                            token => return Err(self.fail_string(format!("Unexpected token {} in JSON", token)))
+                            //                 elif c == 'u':
+                            //                     if self.i + 4 >= len(self.s):
+                            //                         break
+                            //                     hexcode = self.s[self.i:self.i + 4]
+                            //                     for c in hexcode:
+                            //                         if c not in '0123456789abcdefABCDEF':
+                            //                             self.fail("invalid \\u escape")
+                            //                     self.i += 4
+                            //                     strval += chr(int(hexcode, 16))
+                            token => {
+                                return Err(self.fail_string(format!(
+                                    "Unexpected token {} in JSON",
+                                    token
+                                )))
+                            }
                         };
                         self.i += 1;
                         strval.push(out_char);
@@ -123,7 +126,10 @@ impl Parser {
         let key = self.parse_string()?;
         self.skip_ws();
         if self.at_end() || self.peek_next_byte() != b':' {
-            return Err(self.fail_string(format!("Unexpected token {} in JSON", self.peek_next_byte() as char)));
+            return Err(self.fail_string(format!(
+                "Unexpected token {} in JSON",
+                self.peek_next_byte() as char
+            )));
         }
         self.i += 1;
         Ok(key)
@@ -142,30 +148,34 @@ impl Parser {
             self.skip_ws();
             if self.at_end() {
                 let msg = match self.stack.last() {
-                    _ => "Unexpected end of JSON input"
+                    _ => "Unexpected end of JSON input",
                 };
                 return Err(self.fail(msg));
             }
 
             let value = match self.peek_next_byte() {
-                b'-' | b'0' ... b'9' => {
+                b'-' | b'0'...b'9' => {
                     let start = self.i;
                     while !self.at_end() && b"+-0123456789.eE".contains(&self.peek_next_byte()) {
                         self.i += 1;
                     }
-                    let numstr = &self.s[start .. self.i];
+                    let numstr = &self.s[start..self.i];
                     if numstr.contains('.') || numstr.contains('e') || numstr.contains("E") {
-                        let number: f64 = numstr.parse().chain_err(|| self.fail("Unexpected number in JSON"))?;
+                        let number: f64 = numstr
+                            .parse()
+                            .chain_err(|| self.fail("Unexpected number in JSON"))?;
                         sink.push_float(number);
                     } else {
-                        let number: i64 = numstr.parse().chain_err(|| self.fail("Unexpected number in JSON"))?;
+                        let number: i64 = numstr
+                            .parse()
+                            .chain_err(|| self.fail("Unexpected number in JSON"))?;
                         sink.push_integer(number);
                     }
                 }
 
                 b'"' => {
                     sink.push_string(self.parse_string()?);
-                },
+                }
 
                 b't' if self.s[self.i..].starts_with("true") => {
                     self.i += 4;
@@ -201,7 +211,7 @@ impl Parser {
                             assert!(key.is_none());
                             sink.finalize_map();
                         }
-                        _ => return Err(self.fail("found '}' without matching '{'"))
+                        _ => return Err(self.fail("found '}' without matching '{'")),
                     }
                 }
 
@@ -215,14 +225,14 @@ impl Parser {
                 b']' => {
                     self.i += 1;
                     match self.pop() {
-                        Some(Stack::Array) =>
-                            sink.finalize_array(),
-                        _ =>
-                            return Err(self.fail("found ']' without matching '['"))
+                        Some(Stack::Array) => sink.finalize_array(),
+                        _ => return Err(self.fail("found ']' without matching '['")),
                     }
                 }
 
-                token => return Err(self.fail_string(format!("Unexpected token {}", token as char)))
+                token => {
+                    return Err(self.fail_string(format!("Unexpected token {}", token as char)))
+                }
             };
             return Ok(value);
         }
@@ -259,11 +269,11 @@ impl Parser {
                 match self.peek_next_byte() {
                     b',' => self.i += 1,
                     b']' => {}
-                    _ => return Err(self.fail("expected ',' or ']' after array element"))
+                    _ => return Err(self.fail("expected ',' or ']' after array element")),
                 }
                 self.stack.push(Stack::Array);
             }
-            None => panic!("can't happen")
+            None => panic!("can't happen"),
         }
         Ok(())
     }

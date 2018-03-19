@@ -1,4 +1,4 @@
-use rustler::{Decoder, Encoder, Env, Term, Error};
+use rustler::{Decoder, Encoder, Env, Error, Term};
 use rustler::types::atom::Atom;
 use rustler::types::list::ListIterator;
 use rustler::types::map::MapIterator;
@@ -39,13 +39,9 @@ fn handle_map<'a>(env: Env<'a>, iter: MapIterator<'a>) -> Result<JsonValue, Erro
 
     for (key, value) in iter {
         let key_string = match key.get_type() {
-            TermType::Atom => {
-                key.atom_to_string().ok().unwrap()
-            }
-            TermType::Binary => {
-                key.decode().ok().unwrap()
-            }
-            _ => return Err(Error::BadArg)
+            TermType::Atom => key.atom_to_string().ok().unwrap(),
+            TermType::Binary => key.decode().ok().unwrap(),
+            _ => return Err(Error::BadArg),
         };
         map.insert(&key_string, term_to_json(env, value)?);
     }
@@ -53,9 +49,7 @@ fn handle_map<'a>(env: Env<'a>, iter: MapIterator<'a>) -> Result<JsonValue, Erro
 }
 
 fn handle_list<'a>(env: Env<'a>, iter: ListIterator<'a>) -> Result<JsonValue, Error> {
-    let values: Result<Vec<JsonValue>, _> = iter.map(|term| {
-        term_to_json(env, term)
-    }).collect();
+    let values: Result<Vec<JsonValue>, _> = iter.map(|term| term_to_json(env, term)).collect();
 
     Ok(JsonValue::Array(values?))
 }

@@ -1,4 +1,4 @@
-use rustler::{Encoder, Env, Term, Error};
+use rustler::{Encoder, Env, Error, Term};
 use atoms;
 
 pub fn ok<'a>(env: Env<'a>, term: Term<'a>) -> Result<Term<'a>, Error> {

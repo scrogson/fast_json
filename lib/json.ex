@@ -19,10 +19,10 @@ defmodule Json do
     {:ok, %{"lists" => [1,2,3]}}
 
   """
-  def decode(data, opts \\ []), do: decode_naive(data, opts)
+  def decode(data, opts \\ []), do: threaded_decode(data, opts)
 
   def decode!(data, opts \\ []) do
-    case parse(data, opts) do
+    case decode(data, opts) do
       {:ok, result} -> result
       {:error, error} -> raise Error, message: error
     end

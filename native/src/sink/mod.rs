@@ -1,4 +1,4 @@
-use rustler::{Term, Env, Encoder};
+use rustler::{Encoder, Env, Term};
 use rustler::types::map::map_new;
 use atoms;
 
@@ -70,7 +70,8 @@ impl<'a> ValueSink for TermSink<'a> {
         let value = self.pop();
         let map = self.pop();
 
-        self.stack.push(map.map_put(key.encode(self.env), value).ok().unwrap());
+        self.stack
+            .push(map.map_put(key.encode(self.env), value).ok().unwrap());
     }
 
     fn pop_insert_array(&mut self) {

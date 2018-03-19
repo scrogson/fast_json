@@ -20,3 +20,5 @@ rustler = { git = "https://github.com/hansihe/rustler", branch = "master" }
 rustler_codegen = { git = "https://github.com/hansihe/rustler", branch = "master" }
 json = "0.11.13"
 lazy_static = "1.0.0"
+num_cpus = "1.8.0"
+scoped-pool = "1.0.0"

@@ -43,15 +43,15 @@ defmodule Json.ParserTest do
   end
 
   test "numbers" do
-    assert_raise Error, "Unexpected number in JSON at position 1", fn -> decode!("-") end
-    assert_raise Error, "Unexpected number in JSON at position 3", fn -> decode!("--1") end
-    # FIXME assert_raise Error, "Invalid Number", fn -> decode!("01") end
-    assert_raise Error, "Unexpected token . at position 0", fn -> decode!(".1") end
-    # FIXME assert_raise Error, "Invalid Number", fn -> decode!("1.") end
+    assert_raise Error, "Unexpected end of JSON", fn -> decode!("-") end
+    assert_raise Error, "Unexpected character: - at (1:2)", fn -> decode!("--1") end
+    assert_raise Error, "Unexpected character: 1 at (1:2)", fn -> decode!("01") end
+    assert_raise Error, "Unexpected character: . at (1:1)", fn -> decode!(".1") end
+    assert_raise Error, "Unexpected end of JSON", fn -> decode!("1.") end
     # FIXME: should be "Unexpected end of JSON input"
-    assert_raise Error, "Unexpected number in JSON at position 2", fn -> decode!("1e") end
+    assert_raise Error, "Unexpected end of JSON", fn -> decode!("1e") end
     # FIXME: should be "Unexpected end of JSON input"
-    assert_raise Error, "Unexpected number in JSON at position 5", fn -> decode!("1.0e+") end
+    assert_raise Error, "Unexpected end of JSON", fn -> decode!("1.0e+") end
 
     assert decode!("0") == 0
     assert decode!("01") == 01
@@ -83,13 +83,13 @@ defmodule Json.ParserTest do
     assert_raise Error, "Invalid or unexpected token at position 1", fn -> decode!(~s("Here's a snowman for you: ☃. Good day!)) end
     assert_raise Error, "Invalid or unexpected token at position 1", fn -> decode!(~s("𝄞)) end
 
-    #FIXME assert decode!(~s("\\"\\\\\\/\\b\\f\\n\\r\\t")) == ~s("\\/\b\f\n\r\t)
-    #FIXME assert decode!(~s("\\u2603")) == "☃"
-    #FIXME assert decode!(~s("\\u2028\\u2029")) == "\u2028\u2029"
-    #FIXME assert decode!(~s("\\uD834\\uDD1E")) == "𝄞"
-    #FIXME assert decode!(~s("\\uD834\\uDD1E")) == "𝄞"
-    #FIXME assert decode!(~s("\\uD799\\uD799")) == "힙힙"
-    #FIXME assert decode!(~s("✔︎")) == "✔︎"
+    assert decode!(~s("\\"\\\\\\/\\b\\f\\n\\r\\t")) == ~s("\\/\b\f\n\r\t)
+    assert decode!(~s("\\u2603")) == "☃"
+    assert decode!(~s("\\u2028\\u2029")) == "\u2028\u2029"
+    assert decode!(~s("\\uD834\\uDD1E")) == "𝄞"
+    assert decode!(~s("\\uD834\\uDD1E")) == "𝄞"
+    assert decode!(~s("\\uD799\\uD799")) == "힙힙"
+    assert decode!(~s("✔︎")) == "✔︎"
   end
 
   test "objects" do
