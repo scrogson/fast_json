@@ -19,7 +19,7 @@ defmodule Json do
     {:ok, %{"lists" => [1,2,3]}}
 
   """
-  def decode(data, opts \\ []), do: threaded_decode(data, opts)
+  def decode(data, opts \\ []), do: decode_simd(data, opts)
 
   def decode!(data, opts \\ []) do
     case decode(data, opts) do
@@ -30,34 +30,39 @@ defmodule Json do
 
   def threaded_decode(data, opts \\ []) do
     :ok = decode_threaded(data, opts)
+
     receive do
       {:ok, result} ->
         {:ok, result}
+
       {:error, error} ->
         {:error, error}
-    after 5000 ->
-      {:error, :timeout}
+    after
+      5000 ->
+        {:error, :timeout}
     end
   end
 
-  def parse(data, opts \\ []) do
-    data
-    |> decode_init(opts)
-    |> handle_parse_result()
-  end
+  #def parse(data, opts \\ []) do
+    #data
+    #|> decode_init(opts)
+    #|> handle_parse_result()
+  #end
 
-  def handle_parse_result(result) do
-    case result do
-      {:ok, result} ->
-        {:ok, result}
-      {:more, resource, acc} ->
-        resource
-        |> decode_iter(acc)
-        |> handle_parse_result()
-      {:error, error} ->
-        {:error, error}
-    end
-  end
+  #def handle_parse_result(result) do
+    #case result do
+      #{:ok, result} ->
+        #{:ok, result}
+
+      #{:more, resource, acc} ->
+        #resource
+        #|> decode_iter(acc)
+        #|> handle_parse_result()
+
+      #{:error, error} ->
+        #{:error, error}
+    #end
+  #end
 
   @doc ~S"""
   Decodes a map or struct into a JSON string.
@@ -73,14 +78,14 @@ defmodule Json do
       {:error, error} -> raise Error, message: error
     end
   end
+
   def encode(data, opts \\ []), do: encode_dirty(data, opts)
 
   # NIFs
   def decode_naive(_, _ \\ []), do: nif_error()
-  def decode_init(_, _), do: nif_error()
-  def decode_iter(_, _), do: nif_error()
   def decode_dirty(_, _), do: nif_error()
   def decode_threaded(_, _), do: nif_error()
+  def decode_simd(_, _), do: nif_error()
   def encode_dirty(_, _), do: nif_error()
 
   defp nif_error, do: :erlang.nif_error(:nif_not_loaded)

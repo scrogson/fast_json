@@ -1,20 +1,11 @@
-use std::sync::Mutex;
-
 use json::{self, JsonValue};
+use rustler::env::OwnedEnv;
 use rustler::types::map::map_new;
 use rustler::{Encoder, Env, Error, Term};
-use rustler::env::OwnedEnv;
-use rustler::resource::ResourceArc;
-use rustler::schedule::consume_timeslice;
-//use rustler::thread;
+use serde_json::Value;
 
-use atoms;
-use parser::Parser;
-use POOL;
-use sink::TermSink;
-use util::{error, ok};
-
-pub struct ParserResource(Mutex<Parser>);
+use crate::atoms;
+use crate::POOL;
 
 pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let data = args[0].decode()?;
@@ -31,33 +22,19 @@ pub fn decode_naive<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Err
     }
 }
 
-pub fn decode_init<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
-    let source = args[0].decode()?;
-    let resource = ResourceArc::new(ParserResource(Mutex::new(Parser::new(source))));
-    let vector: Vec<Term<'a>> = vec![];
+pub fn decode_simd<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
+    let mut data: String = args[0].decode()?;
 
-    decode_iter(env, &vec![resource.encode(env), vector.encode(env)])
-}
-
-pub fn decode_iter<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
-    let resource: ResourceArc<ParserResource> = args[0].decode()?;
-    let sink_stack: Vec<Term> = args[1].decode()?;
-
-    let mut sink = TermSink::new(env, sink_stack);
-    let mut parser = match resource.0.try_lock() {
-        Err(_) => return Err(Error::BadArg),
-        Ok(guard) => guard,
-    };
-
-    while !consume_timeslice(env, 1) {
-        match parser.parse(&mut sink) {
-            Ok(true) => return ok(env, sink.pop()),
-            Ok(false) => continue,
-            Err(err) => return error(env, err),
+    match simd_json::serde::from_str(&mut data.as_mut_str()) {
+        Ok(json) => {
+            let term = serde_to_term(env, json);
+            Ok((atoms::ok(), term).encode(env))
+        }
+        Err(err) => {
+            let error = format!("{}", err).encode(env);
+            Ok((atoms::error(), error).encode(env))
         }
     }
-
-    Ok((atoms::more(), args[0], sink.to_stack()).encode(env))
 }
 
 pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
@@ -69,24 +46,46 @@ pub fn decode_threaded<'a>(caller: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a
     POOL.spawn(move || {
         owned_env.send_and_clear(&caller_pid, |env| {
             match source.load(env).decode::<String>() {
-                Ok(source) => {
-                    match json::parse(&source) {
-                        Ok(json) => {
-                            let term = json_to_term(env, json);
-                            (atoms::ok(), term).encode(env)
-                        }
-                        Err(err) => {
-                            let error = format!("{}", err).encode(env);
-                            (atoms::error(), error).encode(env)
-                        }
+                Ok(source) => match json::parse(&source) {
+                    Ok(json) => {
+                        let term = json_to_term(env, json);
+                        (atoms::ok(), term).encode(env)
                     }
-                }
-                Err(_) => atoms::error().encode(env)
+                    Err(err) => {
+                        let error = format!("{}", err).encode(env);
+                        (atoms::error(), error).encode(env)
+                    }
+                },
+                Err(_) => atoms::error().encode(env),
             }
         });
     });
 
     Ok(atoms::ok().encode(caller))
+}
+
+fn serde_to_term<'a>(env: Env<'a>, value: Value) -> Term<'a> {
+    match value {
+        Value::Null => atoms::nil().encode(env),
+        Value::String(s) => s.encode(env),
+        Value::Number(n) => {
+            if n.is_i64() {
+                n.as_i64().unwrap().encode(env)
+            } else {
+                n.as_f64().unwrap().encode(env)
+            }
+        }
+        Value::Bool(b) => b.encode(env),
+        Value::Object(mut obj) => obj.iter_mut().fold(map_new(env), |map, (key, value)| {
+            let key_term = key.encode(env);
+            let value_term = serde_to_term(env, value.take());
+            map.map_put(key_term, value_term).ok().unwrap()
+        }),
+        Value::Array(values) => {
+            let terms: Vec<Term<'a>> = values.into_iter().map(|v| serde_to_term(env, v)).collect();
+            terms.encode(env)
+        }
+    }
 }
 
 fn json_to_term<'a>(env: Env<'a>, value: JsonValue) -> Term<'a> {
