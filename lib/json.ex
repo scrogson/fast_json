@@ -1,12 +1,9 @@
 defmodule Json do
-  @moduledoc """
-  Native JSON encoding/decoding library for Elixir using Rust.
-  """
-  use Rustler, otp_app: :fast_json
-
   defmodule Error do
     defexception [:message]
   end
+
+  alias Json.Native
 
   @doc ~S"""
   Decodes a binary string into Elixir terms.
@@ -19,30 +16,33 @@ defmodule Json do
     {:ok, %{"lists" => [1,2,3]}}
 
   """
-  def decode(data, opts \\ []), do: threaded_decode(data, opts)
+  def decode(data), do: threaded_decode(data)
 
-  def decode!(data, opts \\ []) do
-    case decode(data, opts) do
+  def decode!(data) do
+    case decode(data) do
       {:ok, result} -> result
       {:error, error} -> raise Error, message: error
     end
   end
 
-  def threaded_decode(data, opts \\ []) do
-    :ok = decode_threaded(data, opts)
+  def threaded_decode(data) do
+    :ok = Native.decode_threaded(data)
+
     receive do
       {:ok, result} ->
         {:ok, result}
+
       {:error, error} ->
         {:error, error}
-    after 5000 ->
-      {:error, :timeout}
+    after
+      5000 ->
+        {:error, :timeout}
     end
   end
 
-  def parse(data, opts \\ []) do
+  def parse(data) do
     data
-    |> decode_init(opts)
+    |> Native.decode_init()
     |> handle_parse_result()
   end
 
@@ -50,10 +50,12 @@ defmodule Json do
     case result do
       {:ok, result} ->
         {:ok, result}
+
       {:more, resource, acc} ->
         resource
-        |> decode_iter(acc)
+        |> Native.decode_iter(acc)
         |> handle_parse_result()
+
       {:error, error} ->
         {:error, error}
     end
@@ -67,21 +69,12 @@ defmodule Json do
     {:ok, ~s({"hello":"world","list":[{"a":"b"}]})}
 
   """
-  def encode!(data, opts \\ []) do
-    case encode(data, opts) do
+  def encode!(data) do
+    case encode(data) do
       {:ok, result} -> result
       {:error, error} -> raise Error, message: error
     end
   end
-  def encode(data, opts \\ []), do: encode_dirty(data, opts)
 
-  # NIFs
-  def decode_naive(_, _ \\ []), do: nif_error()
-  def decode_init(_, _), do: nif_error()
-  def decode_iter(_, _), do: nif_error()
-  def decode_dirty(_, _), do: nif_error()
-  def decode_threaded(_, _), do: nif_error()
-  def encode_dirty(_, _), do: nif_error()
-
-  defp nif_error, do: :erlang.nif_error(:nif_not_loaded)
+  def encode(data), do: Native.encode_dirty(data)
 end

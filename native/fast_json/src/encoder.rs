@@ -1,11 +1,7 @@
-use rustler::{Decoder, Encoder, Env, Error, Term};
-use rustler::types::atom::Atom;
-use rustler::types::list::ListIterator;
-use rustler::types::map::MapIterator;
-use json;
+use crate::atoms;
+use crate::util::ok;
 use json::JsonValue;
-use util::ok;
-use atoms;
+use rustler::{Atom, Decoder, Encoder, Env, Error, ListIterator, MapIterator, Term};
 
 pub fn encode<'a>(env: Env<'a>, args: &[Term<'a>]) -> Result<Term<'a>, Error> {
     let json_val = term_to_json(env, args[0].decode()?)?;
