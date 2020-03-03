@@ -1,0 +1,21 @@
+[package]
+name = "fast_json"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[lib]
+name = "fast_json"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[features]
+default = []
+
+[dependencies]
+error-chain = "0.11.0"
+rustler = "0.22.0-rc.0"
+json = "0.11.13"
+lazy_static = "1.0.0"
+num_cpus = "1.8.0"
+scoped-pool = "1.0.0"

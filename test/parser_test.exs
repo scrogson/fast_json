@@ -1,32 +1,17 @@
 defmodule Json.ParserTest do
   use ExUnit.Case, async: true
 
+  import TestHelper
   import Json
+  import Json.Native
   alias Json.Error
 
   test "reductions" do
     data = File.read!(Path.expand("../bench/data/issue90.json", __DIR__))
-    #IO.inspect count_reductions(data, &Json.decode/1)
-    #IO.inspect count_reductions(data, &Json.decode_naive/1)
-    IO.inspect count_reductions(data, &decode!/1)
-    #IO.inspect count_reductions(data, &threaded_decode/1)
-  end
 
-  defp count_reductions(data, fun) do
-    parent = self()
-    pid = spawn(fn ->
-      me = self()
-      start = :os.timestamp()
-      {_, r0} = Process.info(me, :reductions)
-      _ = fun.(data)
-      t = :timer.now_diff(:os.timestamp(), start)
-      {_, r1} = Process.info(me, :reductions)
-      send(parent, {me, time: t / 1_000_000, starting_reds: r0, ending_reds: r1, diff: r1 - r0})
-    end)
-
-    receive do
-      {^pid, result} -> result
-    end
+    data
+    |> count_reductions(&Json.parse/1)
+    |> IO.inspect()
   end
 
   test "large input" do
@@ -71,16 +56,19 @@ defmodule Json.ParserTest do
     assert decode!("0.1e-1") == 0.1e-1
     assert decode!("99.99e99") == 99.99e99
     assert decode!("-99.99e-99") == -99.99e-99
-    assert decode!("123456789.123456789e123") == 123456789.123456789e123
+    assert decode!("123456789.123456789e123") == 123_456_789.123456789e123
   end
 
   test "strings" do
     assert_raise Error, "Invalid or unexpected token at position 1", fn -> decode!(~s(")) end
     assert_raise Error, "Invalid or unexpected token at position 3", fn -> decode!(~s("\\")) end
     assert_raise Error, "Unexpected token k in JSON at position 2", fn -> decode!(~s("\\k")) end
-    #FIXME assert_raise Error, "Unexpected end of JSON", fn -> decode!(<<34, 128, 34>>) end
-    #FIXME assert_raise Error, "Unexpected end of JSON", fn -> decode!(~s("\\u2603\\")) end
-    assert_raise Error, "Invalid or unexpected token at position 1", fn -> decode!(~s("Here's a snowman for you: ☃. Good day!)) end
+    # FIXME assert_raise Error, "Unexpected end of JSON", fn -> decode!(<<34, 128, 34>>) end
+    # FIXME assert_raise Error, "Unexpected end of JSON", fn -> decode!(~s("\\u2603\\")) end
+    assert_raise Error, "Invalid or unexpected token at position 1", fn ->
+      decode!(~s("Here's a snowman for you: ☃. Good day!))
+    end
+
     assert_raise Error, "Invalid or unexpected token at position 1", fn -> decode!(~s("𝄞)) end
 
     assert decode!(~s("\\"\\\\\\/\\b\\f\\n\\r\\t")) == ~s("\\/\b\f\n\r\t)
@@ -111,7 +99,7 @@ defmodule Json.ParserTest do
   test "arrays" do
     assert_raise Error, ~r"Unexpected end of JSON", fn -> decode!("[") end
     assert_raise Error, "Unexpected token , at position 1", fn -> decode!("[,") end
-    #FIXME assert_raise Error, "Unexpected token ] at position 5", fn -> decode!("[1,]") end
+    # FIXME assert_raise Error, "Unexpected token ] at position 5", fn -> decode!("[1,]") end
 
     assert decode!("[]") == []
     assert decode!("[1, 2, 3]") == [1, 2, 3]
@@ -133,10 +121,10 @@ defmodule Json.ParserTest do
   end
 
   test "atom keys"
-    #hash = :erlang.phash2(:crypto.strong_rand_bytes(8))
-    #assert_raise ArgumentError, fn -> decode!(~s({"key#{hash}": null}), keys: :atoms!) end
+  # hash = :erlang.phash2(:crypto.strong_rand_bytes(8))
+  # assert_raise ArgumentError, fn -> decode!(~s({"key#{hash}": null}), keys: :atoms!) end
 
-    #assert decode!(~s({"foo": "bar"}), keys: :atoms) == %{foo: "bar"}
-    #assert decode!(~s({"foo": "bar"}), keys: :atoms!) == %{foo: "bar"}
-  #end
+  # assert decode!(~s({"foo": "bar"}), keys: :atoms) == %{foo: "bar"}
+  # assert decode!(~s({"foo": "bar"}), keys: :atoms!) == %{foo: "bar"}
+  # end
 end

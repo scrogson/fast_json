@@ -1,6 +1,6 @@
-use rustler::{Encoder, Env, Term};
+use crate::atoms;
 use rustler::types::map::map_new;
-use atoms;
+use rustler::{Encoder, Env, Term};
 
 pub mod value_sink;
 pub use self::value_sink::ValueSink;

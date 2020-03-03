@@ -1,5 +1,5 @@
-use sink::{TermSink, ValueSink};
-use errors::*;
+use crate::errors::*;
+use crate::sink::{TermSink, ValueSink};
 
 const BACKSPACE: char = 8 as char;
 const FORM_FEED: char = 12 as char;
@@ -91,10 +91,9 @@ impl Parser {
                             //                     self.i += 4
                             //                     strval += chr(int(hexcode, 16))
                             token => {
-                                return Err(self.fail_string(format!(
-                                    "Unexpected token {} in JSON",
-                                    token
-                                )))
+                                return Err(
+                                    self.fail_string(format!("Unexpected token {} in JSON", token))
+                                )
                             }
                         };
                         self.i += 1;
@@ -154,7 +153,7 @@ impl Parser {
             }
 
             let value = match self.peek_next_byte() {
-                b'-' | b'0'...b'9' => {
+                b'-' | b'0'..=b'9' => {
                     let start = self.i;
                     while !self.at_end() && b"+-0123456789.eE".contains(&self.peek_next_byte()) {
                         self.i += 1;
